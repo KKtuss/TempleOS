@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TempleOS UI Recreation</title>
+<style>
+:root { --bg:#d7d7d7; --blue:#0048ff; --darkblue:#002c9a; --black:#000; --white:#fff; --red:#d10000; --orange:#ff7a00; --green:#0b8f00; --purple:#6a00b7; --pink:#ff4fd1; --gray:#bfbfbf; --panel:#e8e8e8; }
+html,body { height:100%; }
+body { margin:0; background:var(--bg); font-family: "Courier New", Courier, monospace; color:var(--black); position:relative; overflow-x:hidden; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--panel); border-bottom:4px double var(--blue); font-size:14px; }
+.desktop { padding:8px; position:relative; min-height:calc(100vh - 40px); }
+.window { background:var(--panel); border:4px double var(--blue); box-shadow:0 0 0 2px var(--darkblue) inset; position:absolute; min-width:200px; min-height:150px; }
+.window.active { z-index:1000; }
+.window.dragging { user-select:none; }
+.titlebar { background:var(--panel); color:var(--blue); border-bottom:2px solid var(--blue); padding:2px 6px; display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px; cursor:move; user-select:none; }
+.titlebar .right { display:flex; align-items:center; gap:8px; }
+.titlebar .btn { color:var(--blue); border:2px solid var(--blue); padding:0 4px; text-decoration:none; cursor:pointer; }
+.titlebar .close-btn { cursor:pointer; padding:0 4px; }
+.titlebar .close-btn:hover { background:var(--red); color:var(--white); }
+.resize-handle { position:absolute; background:transparent; z-index:10; }
+.resize-handle.n { top:0; left:0; right:0; height:8px; cursor:n-resize; }
+.resize-handle.s { bottom:0; left:0; right:0; height:8px; cursor:s-resize; }
+.resize-handle.e { top:0; right:0; bottom:0; width:8px; cursor:e-resize; }
+.resize-handle.w { top:0; left:0; bottom:0; width:8px; cursor:w-resize; }
+.resize-handle.ne { top:0; right:0; width:12px; height:12px; cursor:ne-resize; }
+.resize-handle.nw { top:0; left:0; width:12px; height:12px; cursor:nw-resize; }
+.resize-handle.se { bottom:0; right:0; width:12px; height:12px; cursor:se-resize; }
+.resize-handle.sw { bottom:0; left:0; width:12px; height:12px; cursor:sw-resize; }
+.content { padding:10px; font-size:14px; line-height:1.35; overflow:auto; height:calc(100% - 30px); box-sizing:border-box; }
+.content textarea { font-family: "Courier New", Courier, monospace; }
+.field { margin:6px 0; }
+input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:14px; }
+.button { display:inline-block; padding:6px 10px; border:3px double var(--blue); background:var(--white); color:var(--blue); text-decoration:none; font-weight:bold; cursor:pointer; }
+.muted { color:#333; }
+.label { display:block; margin-bottom:2px; }
+.badge { display:inline-block; background:var(--orange); color:var(--white); padding:2px 6px; border:2px solid var(--blue); }
+.dir-list { max-height:300px; overflow:auto; border-top:2px solid var(--blue); padding-top:6px; }
+.dir-item { 
+  white-space:nowrap; 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  gap:12px;
+  margin-bottom:4px;
+}
+.dir-item a { 
+  color:var(--red); 
+  text-decoration:none; 
+  flex-shrink:0;
+  user-select:text;
+}
+.url-scroll {
+  flex:1;
+  overflow:hidden;
+  position:relative;
+  height:1.35em;
+  min-width:0;
+  max-width:200px;
+  user-select:text;
+}
+.url-text {
+  display:inline-block;
+  color:var(--gray);
+  font-size:12px;
+  white-space:nowrap;
+  animation:scroll-right 15s steps(60, end) infinite;
+  position:absolute;
+  left:200px;
+  user-select:text;
+  cursor:text;
+}
+@keyframes scroll-right {
+  0% {
+    transform:translateX(0);
+  }
+  100% {
+    transform:translateX(-400px);
+  }
+}
+.ascii { border-top:2px dashed var(--blue); padding-top:8px; }
+.games { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+.game { display:flex; align-items:center; gap:8px; }
+.game .icon { width:34px; height:24px; position:relative; }
+.icon.adventure::before { content:""; position:absolute; left:8px; top:2px; width:18px; height:18px; border:3px solid var(--green); }
+.icon.bomberman::before { content:""; position:absolute; left:6px; top:2px; width:22px; height:22px; background:var(--black); border-radius:50%; }
+.icon.racing::before { content:""; position:absolute; left:2px; top:2px; width:28px; height:18px; border:3px solid var(--blue); border-left-color:transparent; border-right-color:transparent; }
+.icon.parallax::before { content:""; position:absolute; left:4px; top:2px; width:24px; height:20px; background:var(--pink); }
+.icon.space::before { content:""; position:absolute; left:4px; top:2px; width:26px; height:18px; background:var(--red); clip-path: polygon(0 0, 100% 0, 60% 50%, 100% 100%, 0 100%, 40% 50%); }
+.modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
+.modal .dialog { width:360px; background:var(--panel); border:4px double var(--blue); box-shadow:0 0 0 2px var(--darkblue) inset; }
+.dialog .title { text-align:center; padding:10px; color:var(--blue); border-bottom:2px solid var(--blue); font-weight:bold; }
+.dialog .body { padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+.seal { position:relative; background:var(--white); border:4px double var(--blue); display:inline-block; }
+.seal img { width:auto; height:auto; max-width:500px; max-height:500px; display:block; }
+.dialog .foot { padding:10px; }
+.linkish { color:var(--blue); text-decoration:underline; cursor:pointer; }
+.row { display:flex; gap:10px; align-items:center; }
+.tight { letter-spacing:-0.2px; }
+/* Terminal Animations */
+@keyframes blink { 0%, 49% { opacity:1; } 50%, 100% { opacity:0; } }
+@keyframes typewriter { from { width:0; } to { width:100%; } }
+@keyframes terminal-flicker { 0%, 100% { opacity:1; } 50% { opacity:0.8; } }
+.terminal-cursor { display:inline-block; width:8px; height:14px; background:var(--blue); margin-left:2px; animation:blink 1s infinite; vertical-align:middle; }
+.typing-text { overflow:hidden; white-space:nowrap; border-right:2px solid var(--blue); animation:typewriter 2s steps(40) forwards, blink 1s infinite; }
+.terminal-flicker { animation:terminal-flicker 0.15s infinite; }
+.terminal-boot { opacity:0; animation:fadeIn 0.5s ease-in forwards; }
+@keyframes fadeIn { to { opacity:1; } }
+.glitch { position:relative; }
+.glitch::before, .glitch::after { content:attr(data-text); position:absolute; top:0; left:0; width:100%; height:100%; }
+.glitch::before { left:2px; text-shadow:-2px 0 var(--red); clip:rect(0,900px,0,0); animation:glitch-anim 3s infinite linear alternate-reverse; }
+.glitch::after { left:-2px; text-shadow:2px 0 var(--blue); clip:rect(0,900px,0,0); animation:glitch-anim 2s infinite linear alternate-reverse; }
+@keyframes glitch-anim { 0% { clip:rect(42px,9999px,44px,0); } 5% { clip:rect(12px,9999px,59px,0); } 10% { clip:rect(33px,9999px,29px,0); } 15% { clip:rect(92px,9999px,98px,0); } 20% { clip:rect(23px,9999px,82px,0); } 25% { clip:rect(1px,9999px,15px,0); } 30% { clip:rect(67px,9999px,11px,0); } 35% { clip:rect(20px,9999px,35px,0); } 40% { clip:rect(53px,9999px,5px,0); } 45% { clip:rect(78px,9999px,99px,0); } 50% { clip:rect(7px,9999px,94px,0); } 55% { clip:rect(90px,9999px,8px,0); } 60% { clip:rect(2px,9999px,14px,0); } 65% { clip:rect(60px,9999px,78px,0); } 70% { clip:rect(85px,9999px,73px,0); } 75% { clip:rect(15px,9999px,37px,0); } 80% { clip:rect(31px,9999px,27px,0); } 85% { clip:rect(88px,9999px,2px,0); } 90% { clip:rect(3px,9999px,98px,0); } 95% { clip:rect(76px,9999px,7px,0); } 100% { clip:rect(11px,9999px,16px,0); } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div id="topbarInfo">LOAD Mon 12/04 21:19:40 FPS:63<span class="terminal-cursor"></span></div>
+  <div id="contractAddress" style="user-select:text; cursor:pointer; font-family:monospace;" title="Click to copy">0x0000000000000000000000000000000000000000</div>
+</div>
+<div class="desktop">
+  <div class="window" data-initial-pos="grid-1-1">
+    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
+    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
+    <div class="titlebar"><span>ABOUT TEMPLEOS — <span class="tight">templeos.io/tc-about</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
+    <div class="content">
+      <div style="display:flex; gap:12px; align-items:stretch; margin-bottom:10px;">
+        <div style="width:120px; border:2px solid var(--blue); background:var(--white); flex-shrink:0; overflow:hidden; display:flex; align-items:stretch;">
+          <img src="Stems/TerryDavis.png" alt="Terry A. Davis" style="width:100%; height:100%; object-fit:fill; display:block;" />
+        </div>
+        <div style="flex:1;">
+          <p style="margin:0 0 10px 0;">TempleOS was built by Terry A. Davis, a singular programmer who wrote the entire OS alone, even creating it's own programming language (HolyC).</p>
+          <p style="margin:0;">He produced an unusual, influential work of software art, even as he struggled with serious mental illness (documented schizophrenia) throughout his life.</p>
+        </div>
+      </div>
+      <div>
+        <p style="margin:0 0 10px 0;">Despite the OS not being finished nor fully functional, it contains a full compiler, custom kernel, unique graphics engine, and dozens of Davis's own tools and experiments.</p>
+        <p style="margin:0;">This token is a small tribute to his legacy : a nod to creativity without rules.</p>
+      </div>
+    </div>
+  </div>
+  <div class="window" data-initial-pos="grid-2-1">
+    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
+    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
+    <div class="titlebar"><span>GOD WORD — <span class="tight">templeos.io/tc-godword</span> —</span><div class="right"><span class="button" id="newWord">NEW WORD</span><span class="close-btn">[X]</span></div></div>
+    <div class="content"><div id="godText">God says: bringing relief computation multiply garlands arrows away descend savour defective extracted dose thrive flash towardliness and esteem dissipation.</div></div>
+  </div>
+  <div class="window" data-initial-pos="grid-3-1">
+    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
+    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
+    <div class="titlebar"><span>GAMES — <span class="tight">templeos.io/tc-games</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
+    <div class="content">
+      <div class="muted">Make games, dont play them!</div>
+      <div class="games" style="margin-top:10px;">
+        <div class="game"><div class="icon adventure"></div><div>ADVENTURE DUNGEON</div></div>
+        <div class="game"><div class="icon bomberman"></div><div>BOMBERMAN</div></div>
+        <div class="game"><div class="icon racing"></div><div>RACING 3D</div></div>
+        <div class="game"><div class="icon parallax"></div><div>PARALLAX QUEST</div></div>
+        <div class="game"><div class="icon space"></div><div>SPACE INVADERS</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="window" data-initial-pos="grid-1-3">
+    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
+    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
+    <div class="titlebar"><span>LINKS — <span class="tight">templeos.io/tc-links</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
+    <div class="content">
+      <div style="display:flex; flex-direction:column; gap:16px; height:100%;">
+        <div>
+          <div style="font-weight:bold; color:var(--blue); margin-bottom:6px;">TOKEN LINKS:</div>
+          <div class="dir-list" style="max-height:140px;">
+            <div class="dir-item">
+              <a href="https://pump.fun" target="_blank">Pump.fun</a>
+              <div class="url-scroll">
+                <span class="url-text">https://pump.fun</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://x.com" target="_blank">X Account</a>
+              <div class="url-scroll">
+                <span class="url-text">https://x.com</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://x.com/i/communities" target="_blank">X Community</a>
+              <div class="url-scroll">
+                <span class="url-text">https://x.com/i/communities</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:bold; color:var(--blue); margin-bottom:6px;">TEMPLEOS LINKS:</div>
+          <div class="dir-list" style="max-height:140px;">
+            <div class="dir-item">
+              <a href="https://templeos.org" target="_blank">TempleOS / Final Terry Version</a>
+              <div class="url-scroll">
+                <span class="url-text">https://templeos.org</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://www.reddit.com/r/TempleOS_Official" target="_blank">r/TempleOS_Official</a>
+              <div class="url-scroll">
+                <span class="url-text">https://www.reddit.com/r/TempleOS_Official</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://en.wikipedia.org/wiki/TempleOS" target="_blank">TempleOS (Wikipedia)</a>
+              <div class="url-scroll">
+                <span class="url-text">https://en.wikipedia.org/wiki/TempleOS</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://zealos.com" target="_blank">ZealOS (modern fork)</a>
+              <div class="url-scroll">
+                <span class="url-text">https://zealos.com</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="window" data-initial-pos="grid-2-3-span2">
+    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
+    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
+    <div class="titlebar"><span>HOLY C INTERPRETER — <span class="tight">templeos.io/tc-holyc</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
+    <div class="content">
+      <div style="display:flex; flex-direction:column; gap:10px; height:100%;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-weight:bold; color:var(--blue);">CODE:</div>
+          <textarea id="stdin" style="flex:1; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:14px; resize:none; min-height:200px;">"hello world";</textarea>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <a class="button" id="runButton" onclick="runHolyC()">RUN (▶)</a>
+          <a class="button" onclick="document.getElementById('stdin').value=''; document.getElementById('stdout/stderr').value='';">CLEAR</a>
+          <div style="margin-left:auto; display:flex; gap:4px; flex-wrap:wrap;">
+            <span style="color:var(--blue); font-weight:bold; margin-right:4px;">EXAMPLES:</span>
+            <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('helloWorld')">Hello World</a>
+            <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('conditionals')">Conditionals</a>
+            <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('procedures')">Procedures</a>
+            <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('class')">Class</a>
+            <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('define')">Define</a>
+            <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('fibonacci')">Fibonacci</a>
+          </div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-weight:bold; color:var(--blue);">OUTPUT:</div>
+          <textarea id="stdout/stderr" style="flex:1; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:14px; resize:none; min-height:150px; color:var(--black);" readonly></textarea>
+        </div>
+        <div class="muted" style="font-size:12px;">HolyC Interpreter v1.0 — Sandboxed execution</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="modal">
+  <div class="dialog">
+    <div class="title">TempleOS V5.03</div>
+    <div class="body">
+      <div class="seal">
+        <img src="Stems/TempleOS.png" alt="TempleOS" />
+      </div>
+      <div>Public Domain Operating System</div>
+    </div>
+    <div class="foot" style="text-align:center;">
+      <a class="button" id="closeModal">CLOSE</a>
+    </div>
+  </div>
+</div>
+<script>
+// Window Management System
+var zIndexCounter = 1000;
+var dragState = { active: false, window: null, offsetX: 0, offsetY: 0 };
+var resizeState = { active: false, window: null, handle: '', startX: 0, startY: 0, startWidth: 0, startHeight: 0, startLeft: 0, startTop: 0 };
+
+function bringToFront(window) {
+  window.style.zIndex = ++zIndexCounter;
+  document.querySelectorAll('.window').forEach(function(w) {
+    if(w !== window) w.classList.remove('active');
+  });
+  window.classList.add('active');
+}
+
+function initWindow(window) {
+  var titlebar = window.querySelector('.titlebar');
+  var closeBtn = window.querySelector('.close-btn');
+  
+  // Make window focusable
+  window.addEventListener('mousedown', function(e) {
+    if(e.target.closest('.titlebar') || e.target.closest('.resize-handle')) return;
+    bringToFront(window);
+  });
+  
+  // Close button
+  if(closeBtn) {
+    closeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.style.display = 'none';
+    });
+  }
+  
+  // Drag functionality
+  titlebar.addEventListener('mousedown', function(e) {
+    if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
+    bringToFront(window);
+    dragState.active = true;
+    dragState.window = window;
+    var rect = window.getBoundingClientRect();
+    dragState.offsetX = e.clientX - rect.left;
+    dragState.offsetY = e.clientY - rect.top;
+    window.classList.add('dragging');
+    window.setAttribute('data-moved', 'true'); // Mark as moved so resize doesn't reset it
+    e.preventDefault();
+  });
+  
+  // Resize handles
+  window.querySelectorAll('.resize-handle').forEach(function(handle) {
+    handle.addEventListener('mousedown', function(e) {
+      bringToFront(window);
+      resizeState.active = true;
+      resizeState.window = window;
+      resizeState.handle = handle.className.split(' ')[1];
+      var rect = window.getBoundingClientRect();
+      resizeState.startX = e.clientX;
+      resizeState.startY = e.clientY;
+      resizeState.startWidth = rect.width;
+      resizeState.startHeight = rect.height;
+      resizeState.startLeft = rect.left;
+      resizeState.startTop = rect.top;
+      window.setAttribute('data-moved', 'true'); // Mark as moved so resize doesn't reset it
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+}
+
+// Calculate initial grid-based positions
+function calculateGridPositions() {
+  var desktop = document.querySelector('.desktop');
+  var desktopRect = desktop.getBoundingClientRect();
+  var padding = 8;
+  var gap = 10;
+  var availableWidth = desktopRect.width - (padding * 2);
+  var availableHeight = desktopRect.height - (padding * 2);
+  
+  // 3-column grid layout
+  var colWidth = (availableWidth - (gap * 2)) / 3;
+  var squareHeight = colWidth * (2/3); // Top-left window height (2/3 of width)
+  var row1Height = 200; // Original height for other top windows
+  var linksWindowHeight = availableHeight - squareHeight - gap; // Links window starts below square
+  var holycWindowHeight = availableHeight - row1Height - gap; // HolyC interpreter starts below row1Height
+  
+  var positions = {
+    'grid-1-1': { // Column 1, Row 1 - Reduced height window
+      left: padding,
+      top: padding,
+      width: colWidth,
+      height: squareHeight
+    },
+    'grid-2-1': { // Column 2, Row 1
+      left: padding + colWidth + gap,
+      top: padding,
+      width: colWidth,
+      height: row1Height
+    },
+    'grid-3-1': { // Column 3, Row 1
+      left: padding + (colWidth + gap) * 2,
+      top: padding,
+      width: colWidth,
+      height: row1Height
+    },
+    'grid-1-3': { // Column 1, Row 3 - Links window, fits below square
+      left: padding,
+      top: padding + squareHeight + gap,
+      width: colWidth,
+      height: linksWindowHeight
+    },
+    'grid-2-3-span2': { // Column 2-3, Row 3 - HolyC interpreter
+      left: padding + colWidth + gap,
+      top: padding + row1Height + gap,
+      width: colWidth * 2 + gap,
+      height: holycWindowHeight
+    }
+  };
+  
+  return positions;
+}
+
+// Initialize all windows with grid positions
+function initializeWindowPositions() {
+  var positions = calculateGridPositions();
+  document.querySelectorAll('.window').forEach(function(window) {
+    var posKey = window.getAttribute('data-initial-pos');
+    if(posKey && positions[posKey]) {
+      var pos = positions[posKey];
+      window.style.left = pos.left + 'px';
+      window.style.top = pos.top + 'px';
+      window.style.width = pos.width + 'px';
+      window.style.height = pos.height + 'px';
+    }
+    initWindow(window);
+    bringToFront(window);
+  });
+}
+
+// Initialize on load
+if(document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeWindowPositions);
+} else {
+  initializeWindowPositions();
+}
+
+// Recalculate on window resize (only if windows haven't been moved)
+window.addEventListener('resize', function() {
+  var needsReset = false;
+  document.querySelectorAll('.window').forEach(function(window) {
+    if(window.getAttribute('data-initial-pos') && !window.hasAttribute('data-moved')) {
+      needsReset = true;
+    }
+  });
+  if(needsReset) {
+    initializeWindowPositions();
+  }
+});
+
+// Global mouse move for dragging and resizing
+document.addEventListener('mousemove', function(e) {
+  if(dragState.active && dragState.window) {
+    var desktop = document.querySelector('.desktop');
+    var desktopRect = desktop.getBoundingClientRect();
+    var newX = e.clientX - desktopRect.left - dragState.offsetX;
+    var newY = e.clientY - desktopRect.top - dragState.offsetY;
+    newX = Math.max(0, Math.min(newX, desktopRect.width - 100));
+    newY = Math.max(0, Math.min(newY, desktopRect.height - 50));
+    dragState.window.style.left = newX + 'px';
+    dragState.window.style.top = newY + 'px';
+  }
+  
+  if(resizeState.active && resizeState.window) {
+    var handle = resizeState.handle;
+    var deltaX = e.clientX - resizeState.startX;
+    var deltaY = e.clientY - resizeState.startY;
+    var window = resizeState.window;
+    var desktop = document.querySelector('.desktop');
+    var desktopRect = desktop.getBoundingClientRect();
+    var newWidth = resizeState.startWidth;
+    var newHeight = resizeState.startHeight;
+    var newLeft = resizeState.startLeft - desktopRect.left;
+    var newTop = resizeState.startTop - desktopRect.top;
+    
+    if(handle === 'e' || handle === 'ne' || handle === 'se') {
+      newWidth = Math.max(200, resizeState.startWidth + deltaX);
+    }
+    if(handle === 'w' || handle === 'nw' || handle === 'sw') {
+      newWidth = Math.max(200, resizeState.startWidth - deltaX);
+      newLeft = (resizeState.startLeft - desktopRect.left) + (resizeState.startWidth - newWidth);
+    }
+    if(handle === 's' || handle === 'se' || handle === 'sw') {
+      newHeight = Math.max(150, resizeState.startHeight + deltaY);
+    }
+    if(handle === 'n' || handle === 'ne' || handle === 'nw') {
+      newHeight = Math.max(150, resizeState.startHeight - deltaY);
+      newTop = (resizeState.startTop - desktopRect.top) + (resizeState.startHeight - newHeight);
+    }
+    
+    // Constrain to desktop bounds
+    newLeft = Math.max(0, newLeft);
+    newTop = Math.max(0, newTop);
+    if(newLeft + newWidth > desktopRect.width) {
+      newWidth = desktopRect.width - newLeft;
+    }
+    if(newTop + newHeight > desktopRect.height) {
+      newHeight = desktopRect.height - newTop;
+    }
+    
+    window.style.width = newWidth + 'px';
+    window.style.height = newHeight + 'px';
+    window.style.left = newLeft + 'px';
+    window.style.top = newTop + 'px';
+  }
+});
+
+document.addEventListener('mouseup', function() {
+  if(dragState.active) {
+    dragState.window.classList.remove('dragging');
+    dragState.active = false;
+    dragState.window = null;
+  }
+  if(resizeState.active) {
+    resizeState.active = false;
+    resizeState.window = null;
+  }
+});
+
+// Terminal Animations
+function typeText(element, text, speed) {
+  element.textContent = '';
+  var i = 0;
+  function type() {
+    if(i < text.length) {
+      element.textContent += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
+    } else {
+      element.innerHTML += '<span class="terminal-cursor"></span>';
+    }
+  }
+  type();
+}
+
+// Add terminal boot effect to windows
+function addTerminalBootEffect() {
+  document.querySelectorAll('.window').forEach(function(window, index) {
+    window.style.opacity = '0';
+    setTimeout(function() {
+      window.classList.add('terminal-boot');
+      window.style.opacity = '1';
+    }, index * 200);
+  });
+}
+
+// Terminal flicker effect (random)
+function terminalFlicker() {
+  var elements = document.querySelectorAll('.window, .topbar');
+  if(Math.random() > 0.98) {
+    var randomEl = elements[Math.floor(Math.random() * elements.length)];
+    randomEl.classList.add('terminal-flicker');
+    setTimeout(function() {
+      randomEl.classList.remove('terminal-flicker');
+    }, 150);
+  }
+}
+
+// Topbar real-time updates with cursor
+function updateTopbar() {
+  var now = new Date();
+  var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var day = days[now.getDay()];
+  var month = String(now.getMonth() + 1).padStart(2, '0');
+  var date = String(now.getDate()).padStart(2, '0');
+  var hours = String(now.getHours()).padStart(2, '0');
+  var minutes = String(now.getMinutes()).padStart(2, '0');
+  var seconds = String(now.getSeconds()).padStart(2, '0');
+  var fps = Math.floor(60 + Math.random() * 10);
+  var topbarEl = document.getElementById('topbarInfo');
+  topbarEl.innerHTML = 'LOAD ' + day + ' ' + month + '/' + date + ' ' + hours + ':' + minutes + ':' + seconds + ' FPS:' + fps + '<span class="terminal-cursor"></span>';
+}
+setInterval(updateTopbar, 1000);
+updateTopbar();
+
+// Add typing effect to directory items
+function animateDirectoryItems() {
+  var dirItems = document.querySelectorAll('.dir-item');
+  dirItems.forEach(function(item, index) {
+    item.style.opacity = '0';
+    setTimeout(function() {
+      item.style.transition = 'opacity 0.3s';
+      item.style.opacity = '1';
+    }, 500 + (index * 50));
+  });
+}
+
+// Terminal-style glitch effect (occasional)
+function terminalGlitch() {
+  if(Math.random() > 0.95) {
+    var topbar = document.querySelector('.topbar');
+    topbar.style.transform = 'translateX(' + (Math.random() * 4 - 2) + 'px)';
+    setTimeout(function() {
+      topbar.style.transform = 'translateX(0)';
+    }, 50);
+  }
+}
+
+// Initialize terminal effects
+addTerminalBootEffect();
+setInterval(terminalFlicker, 100);
+setInterval(terminalGlitch, 200);
+setTimeout(animateDirectoryItems, 1000);
+
+// Modal functionality
+var modal = document.getElementById('modal');
+document.getElementById('closeModal').onclick = function(){ modal.style.display='none'; };
+
+// Contract address copy functionality
+var contractAddressEl = document.getElementById('contractAddress');
+if(contractAddressEl) {
+  contractAddressEl.addEventListener('click', function() {
+    var address = this.textContent.trim();
+    navigator.clipboard.writeText(address).then(function() {
+      var originalText = contractAddressEl.textContent;
+      contractAddressEl.textContent = 'COPIED!';
+      contractAddressEl.style.color = 'var(--green)';
+      setTimeout(function() {
+        contractAddressEl.textContent = originalText;
+        contractAddressEl.style.color = '';
+      }, 1000);
+    }).catch(function(err) {
+      // Fallback for older browsers
+      var textArea = document.createElement('textarea');
+      textArea.value = address;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        var originalText = contractAddressEl.textContent;
+        contractAddressEl.textContent = 'COPIED!';
+        contractAddressEl.style.color = 'var(--green)';
+        setTimeout(function() {
+          contractAddressEl.textContent = originalText;
+          contractAddressEl.style.color = '';
+        }, 1000);
+      } catch(err) {
+        console.error('Failed to copy:', err);
+      }
+      document.body.removeChild(textArea);
+    });
+  });
+}
+
+// God Word functionality
+var words = [
+  'Praise computation, multiply arrays, divide concerns, yield serenity.',
+  'Let bits be fruitful and hash multiply across the disk.',
+  'Walk the narrow path of purity in code and conscience.',
+  'Above all, guard your stack; for it is the wellspring of life.'
+];
+document.getElementById('newWord').onclick = function(){
+  var i = Math.floor(Math.random()*words.length);
+  document.getElementById('godText').textContent = words[i];
+};
+
+// Image aspect ratio
+var sealImg = document.querySelector('.seal img');
+if(sealImg){
+  sealImg.onload = function(){
+    var seal = document.querySelector('.seal');
+    var ratio = this.naturalWidth / this.naturalHeight;
+    seal.style.aspectRatio = ratio + ' / 1';
+  };
+  if(sealImg.complete) sealImg.onload();
+}
+</script>
+<script defer type="module">
+  import { holyc_web_run } from "./holy.js";
+  window.holyc_web_run = holyc_web_run;
+  
+  // Example code snippets from HolyC Interpreter repo
+  var examples = {
+    helloWorld: '// HolyC Hello world\n"Holy World\\n";\n\nU0\nHelloWorld()\n{\n\t"Holy World\\n";\n}\n\nU0\nWorld()\n{\n\t\'World\\n\';\n}\n\nU0\nHello()\n{\n\t\'Ho\';\n\t\'l\', \'y\';\n\t\' \';\n\tWorld();\n}\n\n\'\\t\';\nHello;\n\'\\n\';\nHelloWorld("*");',
+    conditionals: '// Allows "5 < 1 < 2 + 1 < 20" instead of "5 < 1 && 1 < 2 + 1 && 1 + 1 < 20";\nif (5 < 1 < 2 + 1 < 20)\n{\n\t"true\\n";\n}\n\n// Conditionals with logicals;\nif (TRUE)\n{\n\tif (1 > 2)\n\t{\n\t\t"1 > 2\\n";\n\t}\n\telse if (1 > 2 || 2 > 3)\n\t{\n\t\t"2 > 3\\n";\n\t}\n\telse\n\t{\n\t\t"all false conditions\\n";\n\t}\n}\n\nif (TRUE > FALSE)\n{\n\t"TRUE > FALSE\\n";\n}\n\n// Conditionals with variables;\nU8 A = 1;\nU8 B = 2;\nif (A < B)\n{\n\t"A < B\\n";\n}\n\nif (A)\n{\n\t"A != 0\\n";\n\tA = 0;\n}\n\nif (A)\n{\n\t"A == 0\\n";\n}\n\n// Conditionals with math expressions.\nif (1 + 2 * 3 > 9)\n{\n\t"1 + 2 * 3 > 9\\n";\n}\nelse if (1 + 2 * 3 > A + 8)\n{\n\t"1 + 2 * 3 > A + 8\\n";\n}',
+    procedures: '// HolyC Procedures\nU0\nno_args()\n{\n\t"no args\\n";\n}\n\n// Function with no args, or just default args can be called without parentheses;\nno_args("*");\nno_args();\nno_args;\n\nU8\ndefault_args(U8 abc=1, U8 def, U8 ghi=3)\n{\n\t"arg 1: %d\\n", abc;\n\tdef = def - 2;\n\t"arg 2: %d\\n", def;\n\t"arg 3: %d\\n", ghi;\n\treturn abc + def + ghi;\n}\n\n// Default args don\'t have to be on the end. This code is valid:\nU32 default_args_value = default_args(,4);\n"%d", default_args_value;',
+    class: '// HolyC Class (not finished yet)\nclass Example {\n\tU16 a, b, c;\n\tU32 d, e, f;\n}Exp;\n\nclass Example2 {\n\tExp a;\n}Exp2;\n\nExp2 a;\n\na.a = 10;\n"%d\\n", a.a;\n\nU8 var = a.a * 2 + 1;\n"var: %d", var;',
+    define: '// No define functions exist Terry is not a fan\n#define A "A"\n#define B 123\n\n"%d\\n", A;\n"%d\\n", B;',
+    fibonacci: '// HolyC Fibonacci\nU0\nFibonacci()\n{\n\tU32 a = 0, b = 1, c, i;\n\n\tfor (i = 0; i < 20; i++)\n\t{\n\t\tc = a + b;\n\t\t"%d\\n", c;\n\t\ta = b;\n\t\tb = c;\n\t}\n}\n\nFibonacci;'
+  };
+  
+  // Load example code
+  window.loadExample = function(name) {
+    if(examples[name]) {
+      document.getElementById('stdin').value = examples[name];
+      document.getElementById('stdout/stderr').value = '';
+    }
+  };
+  
+  // Wrapper function to handle async execution and errors
+  window.runHolyC = async function() {
+    var outputEl = document.getElementById('stdout/stderr');
+    var runButton = document.getElementById('runButton');
+    
+    try {
+      outputEl.value = '';
+      outputEl.style.color = 'var(--black)';
+      runButton.textContent = 'RUNNING...';
+      runButton.style.pointerEvents = 'none';
+      
+      await holyc_web_run();
+      
+      // The interpreter should have set the output via stdout() function
+      // If it's still empty after execution, that's fine - some programs don't produce output
+    } catch(error) {
+      outputEl.style.color = 'var(--red)';
+      outputEl.value = 'Error: ' + (error.message || error.toString());
+    } finally {
+      runButton.textContent = 'RUN (▶)';
+      runButton.style.pointerEvents = 'auto';
+    }
+  };
+</script>
+</body>
+</html>
