@@ -111,6 +111,124 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
 .glitch::before { left:2px; text-shadow:-2px 0 var(--red); clip:rect(0,900px,0,0); animation:glitch-anim 3s infinite linear alternate-reverse; }
 .glitch::after { left:-2px; text-shadow:2px 0 var(--blue); clip:rect(0,900px,0,0); animation:glitch-anim 2s infinite linear alternate-reverse; }
 @keyframes glitch-anim { 0% { clip:rect(42px,9999px,44px,0); } 5% { clip:rect(12px,9999px,59px,0); } 10% { clip:rect(33px,9999px,29px,0); } 15% { clip:rect(92px,9999px,98px,0); } 20% { clip:rect(23px,9999px,82px,0); } 25% { clip:rect(1px,9999px,15px,0); } 30% { clip:rect(67px,9999px,11px,0); } 35% { clip:rect(20px,9999px,35px,0); } 40% { clip:rect(53px,9999px,5px,0); } 45% { clip:rect(78px,9999px,99px,0); } 50% { clip:rect(7px,9999px,94px,0); } 55% { clip:rect(90px,9999px,8px,0); } 60% { clip:rect(2px,9999px,14px,0); } 65% { clip:rect(60px,9999px,78px,0); } 70% { clip:rect(85px,9999px,73px,0); } 75% { clip:rect(15px,9999px,37px,0); } 80% { clip:rect(31px,9999px,27px,0); } 85% { clip:rect(88px,9999px,2px,0); } 90% { clip:rect(3px,9999px,98px,0); } 95% { clip:rect(76px,9999px,7px,0); } 100% { clip:rect(11px,9999px,16px,0); } }
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+  .topbar {
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    font-size: 12px;
+  }
+  .topbar > div {
+    width: 100%;
+    text-align: center;
+    word-break: break-all;
+  }
+  #contractAddress {
+    font-size: 10px;
+    padding: 4px;
+  }
+  .desktop {
+    padding: 4px;
+  }
+  .window {
+    position: relative !important;
+    width: calc(100% - 8px) !important;
+    max-width: 100% !important;
+    left: 4px !important;
+    margin-bottom: 8px;
+    min-height: 200px;
+  }
+  .titlebar {
+    font-size: 12px;
+    padding: 4px;
+    touch-action: none;
+  }
+  .titlebar .close-btn {
+    padding: 4px 8px;
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .content {
+    padding: 8px;
+    font-size: 13px;
+    max-height: 60vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .resize-handle {
+    display: none;
+  }
+  .dir-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .url-scroll {
+    max-width: 100%;
+    width: 100%;
+  }
+  .games {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .button {
+    padding: 8px 12px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  input[type="text"], input[type="email"], textarea {
+    font-size: 16px;
+    padding: 8px;
+    min-height: 44px;
+  }
+  textarea {
+    min-height: 150px;
+  }
+  .field {
+    margin: 10px 0;
+  }
+  .modal {
+    padding: 10px;
+  }
+  .modal-content {
+    max-width: 95vw;
+    max-height: 90vh;
+    padding: 12px;
+  }
+  .seal {
+    max-width: 90vw;
+  }
+  .seal img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .topbar {
+    font-size: 10px;
+  }
+  #contractAddress {
+    font-size: 9px;
+  }
+  .titlebar {
+    font-size: 11px;
+  }
+  .content {
+    font-size: 12px;
+    padding: 6px;
+  }
+  .window {
+    min-height: 150px;
+  }
+}
 </style>
 </head>
 <body>
@@ -299,7 +417,7 @@ function initWindow(window) {
     });
   }
   
-  // Drag functionality
+  // Drag functionality (mouse)
   titlebar.addEventListener('mousedown', function(e) {
     if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
     bringToFront(window);
@@ -310,6 +428,21 @@ function initWindow(window) {
     dragState.offsetY = e.clientY - rect.top;
     window.classList.add('dragging');
     window.setAttribute('data-moved', 'true'); // Mark as moved so resize doesn't reset it
+    e.preventDefault();
+  });
+  
+  // Drag functionality (touch)
+  titlebar.addEventListener('touchstart', function(e) {
+    if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
+    var touch = e.touches[0];
+    bringToFront(window);
+    dragState.active = true;
+    dragState.window = window;
+    var rect = window.getBoundingClientRect();
+    dragState.offsetX = touch.clientX - rect.left;
+    dragState.offsetY = touch.clientY - rect.top;
+    window.classList.add('dragging');
+    window.setAttribute('data-moved', 'true');
     e.preventDefault();
   });
   
@@ -343,7 +476,50 @@ function calculateGridPositions() {
   var availableWidth = desktopRect.width - (padding * 2);
   var availableHeight = desktopRect.height - (padding * 2);
   
-  // 3-column grid layout
+  // Check if mobile device
+  var isMobile = window.innerWidth <= 768;
+  
+  if(isMobile) {
+    // Mobile: Stack windows vertically, full width
+    var windowWidth = availableWidth;
+    var windowHeight = Math.min(300, availableHeight / 5);
+    var currentTop = padding;
+    
+    return {
+      'grid-1-1': {
+        left: padding,
+        top: currentTop,
+        width: windowWidth,
+        height: windowHeight
+      },
+      'grid-2-1': {
+        left: padding,
+        top: currentTop += windowHeight + gap,
+        width: windowWidth,
+        height: windowHeight
+      },
+      'grid-3-1': {
+        left: padding,
+        top: currentTop += windowHeight + gap,
+        width: windowWidth,
+        height: windowHeight
+      },
+      'grid-1-3': {
+        left: padding,
+        top: currentTop += windowHeight + gap,
+        width: windowWidth,
+        height: windowHeight
+      },
+      'grid-2-3-span2': {
+        left: padding,
+        top: currentTop += windowHeight + gap,
+        width: windowWidth,
+        height: Math.max(windowHeight, availableHeight - currentTop - padding)
+      }
+    };
+  }
+  
+  // Desktop: 3-column grid layout
   var colWidth = (availableWidth - (gap * 2)) / 3;
   var squareHeight = colWidth * (2/3); // Top-left window height (2/3 of width)
   var row1Height = 200; // Original height for other top windows
@@ -423,18 +599,23 @@ window.addEventListener('resize', function() {
   }
 });
 
-// Global mouse move for dragging and resizing
-document.addEventListener('mousemove', function(e) {
+// Helper function to handle drag movement
+function handleDragMove(clientX, clientY) {
   if(dragState.active && dragState.window) {
     var desktop = document.querySelector('.desktop');
     var desktopRect = desktop.getBoundingClientRect();
-    var newX = e.clientX - desktopRect.left - dragState.offsetX;
-    var newY = e.clientY - desktopRect.top - dragState.offsetY;
+    var newX = clientX - desktopRect.left - dragState.offsetX;
+    var newY = clientY - desktopRect.top - dragState.offsetY;
     newX = Math.max(0, Math.min(newX, desktopRect.width - 100));
     newY = Math.max(0, Math.min(newY, desktopRect.height - 50));
     dragState.window.style.left = newX + 'px';
     dragState.window.style.top = newY + 'px';
   }
+}
+
+// Global mouse move for dragging and resizing
+document.addEventListener('mousemove', function(e) {
+  handleDragMove(e.clientX, e.clientY);
   
   if(resizeState.active && resizeState.window) {
     var handle = resizeState.handle;
@@ -481,6 +662,27 @@ document.addEventListener('mousemove', function(e) {
 });
 
 document.addEventListener('mouseup', function() {
+  if(dragState.active) {
+    dragState.window.classList.remove('dragging');
+    dragState.active = false;
+    dragState.window = null;
+  }
+  if(resizeState.active) {
+    resizeState.active = false;
+    resizeState.window = null;
+  }
+});
+
+// Touch event handlers for mobile
+document.addEventListener('touchmove', function(e) {
+  if(dragState.active && dragState.window) {
+    e.preventDefault();
+    var touch = e.touches[0];
+    handleDragMove(touch.clientX, touch.clientY);
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', function() {
   if(dragState.active) {
     dragState.window.classList.remove('dragging');
     dragState.active = false;
