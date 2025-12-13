@@ -9,7 +9,9 @@
 html,body { height:100%; }
 body { margin:0; background:var(--bg); font-family: "Courier New", Courier, monospace; color:var(--black); position:relative; overflow-x:hidden; }
 .topbar { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--panel); border-bottom:4px double var(--blue); font-size:14px; }
-.desktop { padding:8px; position:relative; min-height:calc(100vh - 40px); }
+.desktop { padding:8px; position:relative; min-height:calc(100vh - 40px); transition:filter 1s ease-out; }
+.desktop.blurred { filter:blur(8px); }
+.desktop.blurred .window[data-initial-pos="grid-1-1"] { filter:blur(0); }
 .window { background:var(--panel); border:4px double var(--blue); box-shadow:0 0 0 2px var(--darkblue) inset; position:absolute; min-width:200px; min-height:150px; }
 .window.active { z-index:1000; }
 .window.dragging { user-select:none; }
@@ -413,6 +415,20 @@ function initWindow(window) {
   if(closeBtn) {
     closeBtn.addEventListener('click', function(e) {
       e.stopPropagation();
+      // Check if this is the first window (grid-1-1) for blur removal
+      var isFirstWindow = window.getAttribute('data-initial-pos') === 'grid-1-1';
+      if(isFirstWindow) {
+        var desktop = document.querySelector('.desktop');
+        if(desktop && desktop.classList.contains('blurred')) {
+          // Smoothly remove blur
+          desktop.classList.remove('blurred');
+          // Hide the window after transition completes
+          setTimeout(function() {
+            window.style.display = 'none';
+          }, 1000);
+          return; // Don't hide immediately
+        }
+      }
       window.style.display = 'none';
     });
   }
@@ -581,9 +597,21 @@ function initializeWindowPositions() {
 
 // Initialize on load
 if(document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeWindowPositions);
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeWindowPositions();
+    // Add blur effect on page load
+    var desktop = document.querySelector('.desktop');
+    if(desktop) {
+      desktop.classList.add('blurred');
+    }
+  });
 } else {
   initializeWindowPositions();
+  // Add blur effect on page load
+  var desktop = document.querySelector('.desktop');
+  if(desktop) {
+    desktop.classList.add('blurred');
+  }
 }
 
 // Recalculate on window resize (only if windows haven't been moved)
