@@ -413,46 +413,11 @@ function initWindow(window) {
   
   // Close button
   if(closeBtn) {
-    var windowEl = window; // Store reference to avoid confusion
-    var isFirstWindow = windowEl.getAttribute('data-initial-pos') === 'grid-1-1';
-    
-    if(isFirstWindow) {
-      // Special handler for first window to remove blur
-      closeBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        
-        console.log('First window close button clicked in initWindow');
-        
-        var desktop = document.querySelector('.desktop');
-        if(desktop) {
-          if(desktop.classList.contains('blurred') || desktop.style.filter.includes('blur')) {
-            console.log('Removing blur from desktop');
-            desktop.style.filter = 'blur(0)';
-            desktop.classList.remove('blurred');
-            
-            // Hide window after transition
-            setTimeout(function() {
-              windowEl.style.display = 'none';
-              console.log('First window hidden');
-            }, 1000);
-          } else {
-            // If blur already removed, just hide
-            windowEl.style.display = 'none';
-          }
-        } else {
-          // Fallback if desktop not found
-          windowEl.style.display = 'none';
-        }
-      });
-    } else {
-      // Normal handler for other windows
-      closeBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        windowEl.style.display = 'none';
-      });
-    }
+    closeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      window.style.display = 'none';
+    });
   }
   
   // Drag functionality (mouse)
@@ -848,7 +813,34 @@ setTimeout(animateDirectoryItems, 1000);
 
 // Modal functionality
 var modal = document.getElementById('modal');
-document.getElementById('closeModal').onclick = function(){ modal.style.display='none'; };
+var closeModalBtn = document.getElementById('closeModal');
+if(closeModalBtn) {
+  closeModalBtn.onclick = function() {
+    console.log('TempleOS V5.03 modal close button clicked - removing blur');
+    
+    // Remove blur smoothly from desktop
+    var desktop = document.querySelector('.desktop');
+    if(desktop) {
+      if(desktop.classList.contains('blurred') || desktop.style.filter.includes('blur')) {
+        console.log('Removing blur from desktop');
+        desktop.style.filter = 'blur(0)';
+        desktop.classList.remove('blurred');
+        
+        // Hide modal after transition completes
+        setTimeout(function() {
+          modal.style.display = 'none';
+          console.log('Modal hidden');
+        }, 1000);
+      } else {
+        // If blur already removed, just hide modal
+        modal.style.display = 'none';
+      }
+    } else {
+      // Fallback if desktop not found
+      modal.style.display = 'none';
+    }
+  };
+}
 
 // Contract address copy functionality
 var contractAddressEl = document.getElementById('contractAddress');
