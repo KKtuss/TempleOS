@@ -592,44 +592,67 @@ function initializeWindowPositions() {
 // Initialize on load and add blur effect
 function setupBlurEffect() {
   var desktop = document.querySelector('.desktop');
-  if(desktop) {
-    desktop.classList.add('blurred');
-    console.log('Blur effect added to desktop');
-    
-    // Use event delegation to catch clicks on first window's close button
-    desktop.addEventListener('click', function(e) {
-      // Check if clicked element is the close button of first window
-      if(e.target.classList.contains('close-btn') || e.target.closest('.close-btn')) {
-        var closeBtn = e.target.classList.contains('close-btn') ? e.target : e.target.closest('.close-btn');
-        var clickedWindow = closeBtn.closest('.window');
-        
-        if(clickedWindow && clickedWindow.getAttribute('data-initial-pos') === 'grid-1-1') {
-          if(desktop.classList.contains('blurred')) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            console.log('Removing blur via delegation');
-            desktop.classList.remove('blurred');
-            
-            // Hide window after transition
-            setTimeout(function() {
-              clickedWindow.style.display = 'none';
-            }, 1000);
-            return false;
-          }
-        }
-      }
-    }, true); // Use capture phase
+  if(!desktop) {
+    console.error('Desktop element not found');
+    return;
   }
+  
+  // Add blur class and also set style directly for reliability
+  desktop.classList.add('blurred');
+  desktop.style.filter = 'blur(8px)';
+  desktop.style.transition = 'filter 1s ease-out';
+  console.log('Blur effect added to desktop');
+  
+  // Find first window and add direct handler to its close button
+  var firstWindow = document.querySelector('.window[data-initial-pos="grid-1-1"]');
+  if(!firstWindow) {
+    console.error('First window not found');
+    return;
+  }
+  
+  // Keep first window unblurred
+  firstWindow.style.filter = 'blur(0)';
+  
+  var firstCloseBtn = firstWindow.querySelector('.close-btn');
+  if(!firstCloseBtn) {
+    console.error('First window close button not found');
+    return;
+  }
+  
+  console.log('Setting up close button handler');
+  
+  // Add handler directly (will run after initWindow's handler due to timing)
+  firstCloseBtn.addEventListener('click', function handleFirstClose(e) {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    
+    console.log('First window close button clicked - removing blur');
+    
+    // Remove blur smoothly
+    desktop.style.filter = 'blur(0)';
+    desktop.classList.remove('blurred');
+    
+    // Hide window after transition
+    setTimeout(function() {
+      firstWindow.style.display = 'none';
+      console.log('Window hidden');
+    }, 1000);
+    
+    return false;
+  }, true); // Capture phase
 }
 
 if(document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
     initializeWindowPositions();
-    setTimeout(setupBlurEffect, 200); // Small delay to ensure DOM is ready
+    // Wait for initWindow to complete, then setup blur
+    setTimeout(setupBlurEffect, 500);
   });
 } else {
   initializeWindowPositions();
-  setTimeout(setupBlurEffect, 200);
+  // Wait for initWindow to complete, then setup blur
+  setTimeout(setupBlurEffect, 500);
 }
 
 // Recalculate on window resize (only if windows haven't been moved)
