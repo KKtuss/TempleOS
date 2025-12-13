@@ -415,21 +415,28 @@ function initWindow(window) {
   if(closeBtn) {
     closeBtn.addEventListener('click', function(e) {
       e.stopPropagation();
+      e.preventDefault();
+      
       // Check if this is the first window (grid-1-1) for blur removal
-      var isFirstWindow = window.getAttribute('data-initial-pos') === 'grid-1-1';
+      var windowEl = window; // Store reference to avoid confusion
+      var isFirstWindow = windowEl.getAttribute('data-initial-pos') === 'grid-1-1';
+      
       if(isFirstWindow) {
         var desktop = document.querySelector('.desktop');
-        if(desktop && desktop.classList.contains('blurred')) {
-          // Smoothly remove blur
-          desktop.classList.remove('blurred');
-          // Hide the window after transition completes
-          setTimeout(function() {
-            window.style.display = 'none';
-          }, 1000);
-          return; // Don't hide immediately
+        if(desktop) {
+          // Remove blur class to trigger smooth transition
+          if(desktop.classList.contains('blurred')) {
+            desktop.classList.remove('blurred');
+            // Hide the window after transition completes
+            setTimeout(function() {
+              windowEl.style.display = 'none';
+            }, 1000);
+            return; // Don't hide immediately
+          }
         }
       }
-      window.style.display = 'none';
+      // For other windows, hide immediately
+      windowEl.style.display = 'none';
     });
   }
   
@@ -596,22 +603,45 @@ function initializeWindowPositions() {
 }
 
 // Initialize on load
-if(document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    initializeWindowPositions();
-    // Add blur effect on page load
-    var desktop = document.querySelector('.desktop');
-    if(desktop) {
-      desktop.classList.add('blurred');
-    }
-  });
-} else {
-  initializeWindowPositions();
-  // Add blur effect on page load
+function setupBlurEffect() {
   var desktop = document.querySelector('.desktop');
   if(desktop) {
     desktop.classList.add('blurred');
+    
+    // Add direct handler to first window's close button (using capture phase to run first)
+    var firstWindow = document.querySelector('.window[data-initial-pos="grid-1-1"]');
+    if(firstWindow) {
+      var firstCloseBtn = firstWindow.querySelector('.close-btn');
+      if(firstCloseBtn) {
+        // Use capture phase to intercept the event before other handlers
+        firstCloseBtn.addEventListener('click', function(e) {
+          var desktop = document.querySelector('.desktop');
+          if(desktop && desktop.classList.contains('blurred')) {
+            e.stopImmediatePropagation(); // Stop all other handlers
+            e.preventDefault();
+            
+            // Remove blur smoothly
+            desktop.classList.remove('blurred');
+            
+            // Hide window after transition
+            setTimeout(function() {
+              firstWindow.style.display = 'none';
+            }, 1000);
+          }
+        }, true); // true = capture phase
+      }
+    }
   }
+}
+
+if(document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeWindowPositions();
+    setTimeout(setupBlurEffect, 100); // Small delay to ensure DOM is ready
+  });
+} else {
+  initializeWindowPositions();
+  setTimeout(setupBlurEffect, 100);
 }
 
 // Recalculate on window resize (only if windows haven't been moved)
