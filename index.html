@@ -238,7 +238,7 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
   <div id="topbarInfo">LOAD Mon 12/04 21:19:40 FPS:63<span class="terminal-cursor"></span></div>
   <div id="contractAddress" style="user-select:text; cursor:pointer; font-family:monospace;" title="Click to copy">0x0000000000000000000000000000000000000000</div>
 </div>
-<div class="desktop">
+<div class="desktop blurred">
   <div class="window" data-initial-pos="grid-1-1">
     <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
     <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
@@ -590,19 +590,14 @@ function setupBlurEffect() {
     return;
   }
   
-  // Add blur class and also set style directly for reliability
-  desktop.classList.add('blurred');
+  // Blur is already applied via HTML class, just ensure style and transition are set
   desktop.style.filter = 'blur(8px)';
   desktop.style.transition = 'filter 1s ease-out';
-  console.log('Blur effect added to desktop');
   
   // Find first window and keep it unblurred
   var firstWindow = document.querySelector('.window[data-initial-pos="grid-1-1"]');
   if(firstWindow) {
     firstWindow.style.filter = 'blur(0)';
-    console.log('First window kept unblurred');
-  } else {
-    console.error('First window not found');
   }
 }
 
