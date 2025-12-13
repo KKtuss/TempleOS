@@ -261,7 +261,7 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
     <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
     <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
     <div class="titlebar"><span>GOD WORD — <span class="tight">templeos.io/tc-godword</span> —</span><div class="right"><span class="button" id="newWord">NEW WORD</span><span class="close-btn">[X]</span></div></div>
-    <div class="content"><div id="godText">God says: bringing relief computation multiply garlands arrows away descend savour defective extracted dose thrive flash towardliness and esteem dissipation.</div></div>
+    <div class="content"><div id="godText">God says: Loading oracle...</div></div>
   </div>
   <div class="window" data-initial-pos="grid-3-1">
     <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
@@ -822,16 +822,79 @@ if(contractAddressEl) {
 }
 
 // God Word functionality
-var words = [
-  'Praise computation, multiply arrays, divide concerns, yield serenity.',
-  'Let bits be fruitful and hash multiply across the disk.',
-  'Walk the narrow path of purity in code and conscience.',
-  'Above all, guard your stack; for it is the wellspring of life.'
-];
-document.getElementById('newWord').onclick = function(){
-  var i = Math.floor(Math.random()*words.length);
-  document.getElementById('godText').textContent = words[i];
-};
+// God Says Generator - Using Terry Davis's original generator API
+// API: https://godsays.xyz (from https://github.com/orhun/godsays)
+var godTextEl = document.getElementById('godText');
+var newWordBtn = document.getElementById('newWord');
+
+function fetchGodSays() {
+  if(!godTextEl) return;
+  
+  godTextEl.textContent = 'God says: Consulting oracle...';
+  if(newWordBtn) {
+    newWordBtn.style.opacity = '0.5';
+    newWordBtn.style.pointerEvents = 'none';
+  }
+  
+  // Try direct API first, then CORS proxy as fallback
+  var apiUrl = 'https://godsays.xyz';
+  var corsProxy = 'https://api.allorigins.win/raw?url=';
+  
+  function tryFetch(url, useProxy) {
+    var fetchUrl = useProxy ? corsProxy + encodeURIComponent(url) : url;
+    
+    return fetch(fetchUrl)
+      .then(function(response) {
+        if(!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+      })
+      .then(function(text) {
+        var cleanText = text.trim();
+        if(cleanText && cleanText.length > 0) {
+          godTextEl.textContent = 'God says: ' + cleanText;
+          if(newWordBtn) {
+            newWordBtn.style.opacity = '1';
+            newWordBtn.style.pointerEvents = 'auto';
+          }
+          return true;
+        }
+        throw new Error('Empty response');
+      });
+  }
+  
+  // Try direct fetch first
+  tryFetch(apiUrl, false)
+    .catch(function(error) {
+      console.log('Direct fetch failed, trying CORS proxy...', error);
+      // Fallback to CORS proxy
+      return tryFetch(apiUrl, true);
+    })
+    .catch(function(error) {
+      console.error('Error fetching god says:', error);
+      godTextEl.textContent = 'God says: Oracle unavailable. The connection to the divine has been severed.';
+      if(newWordBtn) {
+        newWordBtn.style.opacity = '1';
+        newWordBtn.style.pointerEvents = 'auto';
+      }
+    });
+}
+
+// Fetch initial god says on page load
+if(godTextEl) {
+  // Wait a bit for page to load
+  if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fetchGodSays);
+  } else {
+    setTimeout(fetchGodSays, 100);
+  }
+}
+
+// Update button to fetch new word
+if(newWordBtn) {
+  newWordBtn.onclick = function() {
+    fetchGodSays();
+  };
+}
 
 // Image aspect ratio
 var sealImg = document.querySelector('.seal img');
