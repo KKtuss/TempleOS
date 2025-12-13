@@ -416,15 +416,43 @@ function initWindow(window) {
     var windowEl = window; // Store reference to avoid confusion
     var isFirstWindow = windowEl.getAttribute('data-initial-pos') === 'grid-1-1';
     
-    if(!isFirstWindow) {
-      // Normal handler for other windows (first window handled by delegation)
+    if(isFirstWindow) {
+      // Special handler for first window to remove blur
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        console.log('First window close button clicked in initWindow');
+        
+        var desktop = document.querySelector('.desktop');
+        if(desktop) {
+          if(desktop.classList.contains('blurred') || desktop.style.filter.includes('blur')) {
+            console.log('Removing blur from desktop');
+            desktop.style.filter = 'blur(0)';
+            desktop.classList.remove('blurred');
+            
+            // Hide window after transition
+            setTimeout(function() {
+              windowEl.style.display = 'none';
+              console.log('First window hidden');
+            }, 1000);
+          } else {
+            // If blur already removed, just hide
+            windowEl.style.display = 'none';
+          }
+        } else {
+          // Fallback if desktop not found
+          windowEl.style.display = 'none';
+        }
+      });
+    } else {
+      // Normal handler for other windows
       closeBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         e.preventDefault();
         windowEl.style.display = 'none';
       });
     }
-    // First window close is handled by event delegation in setupBlurEffect
   }
   
   // Drag functionality (mouse)
@@ -603,56 +631,26 @@ function setupBlurEffect() {
   desktop.style.transition = 'filter 1s ease-out';
   console.log('Blur effect added to desktop');
   
-  // Find first window and add direct handler to its close button
+  // Find first window and keep it unblurred
   var firstWindow = document.querySelector('.window[data-initial-pos="grid-1-1"]');
-  if(!firstWindow) {
+  if(firstWindow) {
+    firstWindow.style.filter = 'blur(0)';
+    console.log('First window kept unblurred');
+  } else {
     console.error('First window not found');
-    return;
   }
-  
-  // Keep first window unblurred
-  firstWindow.style.filter = 'blur(0)';
-  
-  var firstCloseBtn = firstWindow.querySelector('.close-btn');
-  if(!firstCloseBtn) {
-    console.error('First window close button not found');
-    return;
-  }
-  
-  console.log('Setting up close button handler');
-  
-  // Add handler directly (will run after initWindow's handler due to timing)
-  firstCloseBtn.addEventListener('click', function handleFirstClose(e) {
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    e.preventDefault();
-    
-    console.log('First window close button clicked - removing blur');
-    
-    // Remove blur smoothly
-    desktop.style.filter = 'blur(0)';
-    desktop.classList.remove('blurred');
-    
-    // Hide window after transition
-    setTimeout(function() {
-      firstWindow.style.display = 'none';
-      console.log('Window hidden');
-    }, 1000);
-    
-    return false;
-  }, true); // Capture phase
 }
 
 if(document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
     initializeWindowPositions();
-    // Wait for initWindow to complete, then setup blur
-    setTimeout(setupBlurEffect, 500);
+    // Setup blur after windows are initialized
+    setTimeout(setupBlurEffect, 100);
   });
 } else {
   initializeWindowPositions();
-  // Wait for initWindow to complete, then setup blur
-  setTimeout(setupBlurEffect, 500);
+  // Setup blur after windows are initialized
+  setTimeout(setupBlurEffect, 100);
 }
 
 // Recalculate on window resize (only if windows haven't been moved)
