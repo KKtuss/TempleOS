@@ -818,26 +818,21 @@ if(closeModalBtn) {
   closeModalBtn.onclick = function() {
     console.log('TempleOS V5.03 modal close button clicked - removing blur');
     
-    // Remove blur smoothly from desktop
+    // Hide modal immediately
+    modal.style.display = 'none';
+    console.log('Modal hidden immediately');
+    
+    // Then remove blur smoothly from desktop (transition will happen after modal is gone)
     var desktop = document.querySelector('.desktop');
     if(desktop) {
       if(desktop.classList.contains('blurred') || desktop.style.filter.includes('blur')) {
         console.log('Removing blur from desktop');
-        desktop.style.filter = 'blur(0)';
-        desktop.classList.remove('blurred');
-        
-        // Hide modal after transition completes
+        // Use setTimeout with 0ms to ensure modal is hidden first, then start blur transition
         setTimeout(function() {
-          modal.style.display = 'none';
-          console.log('Modal hidden');
-        }, 1000);
-      } else {
-        // If blur already removed, just hide modal
-        modal.style.display = 'none';
+          desktop.style.filter = 'blur(0)';
+          desktop.classList.remove('blurred');
+        }, 10);
       }
-    } else {
-      // Fallback if desktop not found
-      modal.style.display = 'none';
     }
   };
 }
