@@ -5,17 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>TempleOS UI Recreation</title>
 <style>
-:root { --bg:#d7d7d7; --blue:#0048ff; --darkblue:#002c9a; --black:#000; --white:#fff; --red:#d10000; --orange:#ff7a00; --green:#0b8f00; --purple:#6a00b7; --pink:#ff4fd1; --gray:#bfbfbf; --panel:#e8e8e8; }
+@font-face {
+  font-family: "TempleOS Font";
+  src: url("font/templeos_font.ttf") format("truetype"),
+    url("font/templeos_font.otf") format("otf");
+}
+
+:root { 
+  --bg:#0000a8; 
+  --blue:#0000a8; 
+  --darkblue:#0000a8; 
+  --black:#000; 
+  --white:#fff; 
+  --red:#a80000; 
+  --orange:#ff7a00; 
+  --green:#00a800; 
+  --purple:#a800a8; 
+  --pink:#ff4fd1; 
+  --gray:#5757ff; 
+  --panel:#fff; 
+  --yellow:#ffff57;
+}
 html,body { height:100%; }
-body { margin:0; background:var(--bg); font-family: "Courier New", Courier, monospace; color:var(--black); position:relative; overflow-x:hidden; }
-.topbar { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--panel); border-bottom:4px double var(--blue); font-size:14px; }
-.desktop { padding:8px; position:relative; min-height:calc(100vh - 40px); transition:filter 1s ease-out; }
+* {
+  cursor: url("images/templeos_cursor.png"), auto;
+}
+body { margin:0; background:var(--bg); font-family: "TempleOS Font", "Courier New", Courier, monospace; color:var(--black); position:relative; overflow-x:hidden; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:6px 4px 1px 4px; background:var(--bg); color:var(--white); border-bottom:2px solid var(--blue); font-size:13px; }
+.desktop { padding:4px; position:relative; min-height:calc(100vh - 40px); transition:filter 1s ease-out; background:var(--bg); }
 .desktop.blurred { filter:blur(8px); }
 .desktop.blurred .window[data-initial-pos="grid-1-1"] { filter:blur(0); }
-.window { background:var(--panel); border:4px double var(--blue); box-shadow:0 0 0 2px var(--darkblue) inset; position:absolute; min-width:200px; min-height:150px; }
+.window { background:var(--panel); border:2px solid var(--blue); position:absolute; min-width:200px; min-height:150px; overflow:hidden; }
 .window.active { z-index:1000; }
 .window.dragging { user-select:none; }
-.titlebar { background:var(--panel); color:var(--blue); border-bottom:2px solid var(--blue); padding:2px 6px; display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px; cursor:move; user-select:none; }
+.titlebar { background:var(--panel); color:var(--blue); border-bottom:2px solid var(--blue); padding:2px 6px; display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:13px; cursor:move; user-select:none; position:relative; }
 .titlebar .right { display:flex; align-items:center; gap:8px; }
 .titlebar .btn { color:var(--blue); border:2px solid var(--blue); padding:0 4px; text-decoration:none; cursor:pointer; }
 .titlebar .close-btn { cursor:pointer; padding:0 4px; }
@@ -29,10 +52,10 @@ body { margin:0; background:var(--bg); font-family: "Courier New", Courier, mono
 .resize-handle.nw { top:0; left:0; width:12px; height:12px; cursor:nw-resize; }
 .resize-handle.se { bottom:0; right:0; width:12px; height:12px; cursor:se-resize; }
 .resize-handle.sw { bottom:0; left:0; width:12px; height:12px; cursor:sw-resize; }
-.content { padding:10px; font-size:14px; line-height:1.35; overflow:auto; height:calc(100% - 30px); box-sizing:border-box; }
+.content { padding:10px; font-size:13px; line-height:1.35; overflow:auto; height:calc(100% - 30px); box-sizing:border-box; word-wrap:break-word; overflow-wrap:break-word; }
 .content textarea { font-family: "Courier New", Courier, monospace; }
 .field { margin:6px 0; }
-input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:14px; }
+input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:13px; }
 .button { display:inline-block; padding:6px 10px; border:3px double var(--blue); background:var(--white); color:var(--blue); text-decoration:none; font-weight:bold; cursor:pointer; }
 .muted { color:#333; }
 .label { display:block; margin-bottom:2px; }
@@ -81,6 +104,25 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
   }
 }
 .ascii { border-top:2px dashed var(--blue); padding-top:8px; }
+/* Games section - Tribute style */
+.gameBlock {
+  white-space: nowrap;
+  margin: 0 0 10px 0;
+}
+.gameBlock > div {
+  display: inline-block;
+  margin: 5px;
+  text-align: center;
+}
+.gameBlock img {
+  display: block;
+  margin: 0 auto 5px;
+}
+.gameBlock p {
+  color: var(--gray);
+  margin: 2px 0;
+  font-size: 12px;
+}
 .games { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
 .game { display:flex; align-items:center; gap:8px; }
 .game .icon { width:34px; height:24px; position:relative; }
@@ -90,7 +132,7 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
 .icon.parallax::before { content:""; position:absolute; left:4px; top:2px; width:24px; height:20px; background:var(--pink); }
 .icon.space::before { content:""; position:absolute; left:4px; top:2px; width:26px; height:18px; background:var(--red); clip-path: polygon(0 0, 100% 0, 60% 50%, 100% 100%, 0 100%, 40% 50%); }
 .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
-.modal .dialog { width:360px; background:var(--panel); border:4px double var(--blue); box-shadow:0 0 0 2px var(--darkblue) inset; }
+.modal .dialog { width:360px; background:var(--panel); border:6px double var(--blue); }
 .dialog .title { text-align:center; padding:10px; color:var(--blue); border-bottom:2px solid var(--blue); font-weight:bold; }
 .dialog .body { padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; }
 .seal { position:relative; background:var(--white); border:4px double var(--blue); display:inline-block; }
@@ -236,7 +278,7 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
 <body>
 <div class="topbar">
   <div id="topbarInfo">LOAD Mon 12/04 21:19:40 FPS:63<span class="terminal-cursor"></span></div>
-  <div id="contractAddress" style="user-select:text; cursor:pointer; font-family:monospace;" title="Click to copy">0x0000000000000000000000000000000000000000</div>
+  <div id="contractAddress" style="user-select:text; cursor:pointer;" title="Click to copy">0x0000000000000000000000000000000000000000</div>
 </div>
 <div class="desktop blurred">
   <div class="window" data-initial-pos="grid-1-1">
@@ -245,8 +287,8 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
     <div class="titlebar"><span>ABOUT TEMPLEOS — <span class="tight">templeos.io/tc-about</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
     <div class="content">
       <div style="display:flex; gap:12px; align-items:stretch; margin-bottom:10px;">
-        <div style="width:120px; border:2px solid var(--blue); background:var(--white); flex-shrink:0; overflow:hidden; display:flex; align-items:stretch;">
-          <img src="Stems/TerryDavis.png" alt="Terry A. Davis" style="width:100%; height:100%; object-fit:fill; display:block;" />
+        <div style="width:200px; background:var(--white); flex-shrink:0; overflow:hidden; display:flex; align-items:stretch;">
+          <img src="Stems/Terry.jpg" alt="Terry A. Davis" style="width:120%; height:100%; object-fit:cover; object-position:center; display:block; margin-left:-10%;" />
         </div>
         <div style="flex:1;">
           <p style="margin:0 0 10px 0;">TempleOS was built by Terry A. Davis, a singular programmer who wrote the entire OS alone, even creating it's own programming language (HolyC).</p>
@@ -263,20 +305,153 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
     <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
     <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
     <div class="titlebar"><span>GOD WORD — <span class="tight">templeos.io/tc-godword</span> —</span><div class="right"><span class="button" id="newWord">NEW WORD</span><span class="close-btn">[X]</span></div></div>
-    <div class="content"><div id="godText">God says: Loading oracle...</div></div>
+    <div class="content"><div id="godText">god says: Loading oracle...</div></div>
   </div>
   <div class="window" data-initial-pos="grid-3-1">
     <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
     <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
     <div class="titlebar"><span>GAMES — <span class="tight">templeos.io/tc-games</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
     <div class="content">
-      <div class="muted">Make games, dont play them!</div>
-      <div class="games" style="margin-top:10px;">
-        <div class="game"><div class="icon adventure"></div><div>ADVENTURE DUNGEON</div></div>
-        <div class="game"><div class="icon bomberman"></div><div>BOMBERMAN</div></div>
-        <div class="game"><div class="icon racing"></div><div>RACING 3D</div></div>
-        <div class="game"><div class="icon parallax"></div><div>PARALLAX QUEST</div></div>
-        <div class="game"><div class="icon space"></div><div>SPACE INVADERS</div></div>
+      <p style="color: #a800a8; margin-left: 130px; margin-top: 5px; margin-bottom: 5px;">Fun Games</p>
+      <div class="gameBlock">
+        <div>
+          <img src="images/fungames/Titanium.jpg" alt="Titanium">
+          <p style="color: #5757ff; text-align: center;">Titanium</p>
+        </div>
+        <div>
+          <img src="images/fungames/BlackDiamond.jpg" alt="BlackDiamond">
+          <p style="color: #5757ff; text-align: center;">Black</p>
+          <p style="color: #5757ff; text-align: center;">Diamond</p>
+        </div>
+        <div>
+          <img src="images/fungames/FlatBat.jpg" alt="FlatBat">
+          <p style="color: #5757ff; text-align: center;">Flat</p>
+          <p style="color: #5757ff; text-align: center;">Bat</p>
+        </div>
+        <div>
+          <img src="images/fungames/Varoom.jpg" alt="Varoom">
+          <p style="color: #5757ff; text-align: center;">Varoom</p>
+        </div>
+      </div>
+
+      <div class="gameBlock">
+        <div>
+          <img src="images/fungames/FlatTops.jpg" alt="FlatTops">
+          <p style="color: #5757ff; text-align: center;">FlatTops</p>
+        </div>
+        <div>
+          <img src="images/fungames/BomberGolf.jpg" alt="BomberGolf">
+          <p style="color: #5757ff; text-align: center;">Bomber</p>
+          <p style="color: #5757ff; text-align: center;">Golf</p>
+        </div>
+        <div>
+          <img src="images/fungames/KeepAway.jpg" alt="KeepAway">
+          <p style="color: #5757ff; text-align: center;">KeepAway</p>
+        </div>
+        <div>
+          <img src="images/fungames/RawHide.jpg" alt="RawHide">
+          <p style="color: #5757ff; text-align: center;">RawHide</p>
+        </div>
+      </div>
+
+      <div class="gameBlock">
+        <div>
+          <img src="images/fungames/X-Caliber.jpg" alt="X-Caliber">
+          <p style="color: #5757ff; text-align: center;">X-Caliber</p>
+        </div>
+        <div>
+          <img src="images/fungames/wenceslas.jpg" alt="Wenceslas">
+          <p style="color: #5757ff; text-align: center;">Wenceslas</p>
+        </div>
+        <div>
+          <img src="images/fungames/BattleLines.jpg" alt="BattleLines">
+          <p style="color: #5757ff; text-align: center;">Battle</p>
+          <p style="color: #5757ff; text-align: center;">Lines</p>
+        </div>
+      </div>
+
+      <p style="color: #a800a8; margin-left: 130px; margin-top: 5px; margin-bottom: 5px;">Unfun Games</p>
+      <div class="gameBlock">
+        <div>
+          <img src="images/unfungames/talons.jpg" alt="Talons">
+          <p style="color: #5757ff; text-align: center;">Talons</p>
+        </div>
+        <div>
+          <img src="images/unfungames/CastleFrankestein.jpg" alt="CastleFrankestein">
+          <p style="color: #5757ff; text-align: center;">Castle</p>
+          <p style="color: #5757ff; text-align: center;">Frankestein</p>
+        </div>
+        <div>
+          <img src="images/unfungames/ZoneOut.jpg" alt="ZoneOut">
+          <p style="color: #5757ff; text-align: center;">ZoneOut</p>
+        </div>
+      </div>
+
+      <div class="gameBlock">
+        <div>
+          <img src="images/unfungames/ToTheFront.jpg" alt="ToTheFront">
+          <p style="color: #5757ff; text-align: center;">ToTheFront</p>
+        </div>
+        <div>
+          <img src="images/unfungames/Span.jpg" alt="Span">
+          <p style="color: #5757ff; text-align: center;">Span</p>
+        </div>
+        <div>
+          <img src="images/unfungames/TreeCheckers.jpg" alt="TreeCheckers">
+          <p style="color: #5757ff; text-align: center;">TreeCheckers</p>
+        </div>
+        <div>
+          <img src="images/unfungames/Digits.jpg" alt="Digits">
+          <p style="color: #5757ff; text-align: center;">Digits</p>
+        </div>
+      </div>
+
+      <p style="color: #a800a8; margin-left: 130px; margin-top: 5px; margin-bottom: 5px;">Code Scraps</p>
+      <div class="gameBlock">
+        <div>
+          <img src="images/codescraps/Strut.jpg" alt="Strut">
+          <p style="color: #5757ff; text-align: center;">Strut</p>
+        </div>
+        <div>
+          <img src="images/codescraps/BigGuns.jpg" alt="BigGuns">
+          <p style="color: #5757ff; text-align: center;">BigGuns</p>
+        </div>
+        <div>
+          <img src="images/codescraps/TheDead.jpg" alt="TheDead">
+          <p style="color: #5757ff; text-align: center;">TheDead</p>
+        </div>
+        <div>
+          <img src="images/codescraps/DunGen.jpg" alt="DunGen">
+          <p style="color: #5757ff; text-align: center;">DunGen</p>
+        </div>
+        <div>
+          <img src="images/codescraps/Models.jpg" alt="Models">
+          <p style="color: #5757ff; text-align: center;">Models</p>
+        </div>
+      </div>
+
+      <p style="color: #a800a8; margin-left: 130px; margin-top: 5px; margin-bottom: 5px;">Nongames</p>
+      <div class="gameBlock" style="margin-bottom: 25px;">
+        <div>
+          <img src="images/nongames/JukeBox.jpg" alt="JukeBox">
+          <p style="color: #5757ff; text-align: center;">JukeBox</p>
+        </div>
+        <div>
+          <img src="images/nongames/Psalmody.jpg" alt="Psalmody">
+          <p style="color: #5757ff; text-align: center;">Psalmody</p>
+        </div>
+        <div>
+          <img src="images/nongames/Budget.jpg" alt="Budget">
+          <p style="color: #5757ff; text-align: center;">Budget</p>
+        </div>
+        <div>
+          <img src="images/nongames/Logic.jpg" alt="Logic">
+          <p style="color: #5757ff; text-align: center;">Logic</p>
+        </div>
+        <div>
+          <img src="images/nongames/Vocab.jpg" alt="Vocab">
+          <p style="color: #5757ff; text-align: center;">Vocab</p>
+        </div>
       </div>
     </div>
   </div>
@@ -349,7 +524,7 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
       <div style="display:flex; flex-direction:column; gap:10px; height:100%;">
         <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
           <div style="font-weight:bold; color:var(--blue);">CODE:</div>
-          <textarea id="stdin" style="flex:1; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:14px; resize:none; min-height:200px;">"hello world";</textarea>
+          <textarea id="stdin" style="flex:1; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:13px; resize:none; min-height:200px;">"hello world";</textarea>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <a class="button" id="runButton" onclick="runHolyC()">RUN (▶)</a>
@@ -363,10 +538,10 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
             <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('define')">Define</a>
             <a class="button" style="font-size:12px; padding:4px 8px;" onclick="loadExample('fibonacci')">Fibonacci</a>
           </div>
-        </div>
+      </div>
         <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
           <div style="font-weight:bold; color:var(--blue);">OUTPUT:</div>
-          <textarea id="stdout/stderr" style="flex:1; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:14px; resize:none; min-height:150px; color:var(--black);" readonly></textarea>
+          <textarea id="stdout/stderr" style="flex:1; padding:6px; border:2px solid var(--blue); background:var(--white); font-family:inherit; font-size:13px; resize:none; min-height:150px; color:var(--black);" readonly></textarea>
         </div>
         <div class="muted" style="font-size:12px;">HolyC Interpreter v1.0 — Sandboxed execution</div>
       </div>
@@ -474,7 +649,7 @@ function initWindow(window) {
 function calculateGridPositions() {
   var desktop = document.querySelector('.desktop');
   var desktopRect = desktop.getBoundingClientRect();
-  var padding = 8;
+  var padding = 4;
   var gap = 10;
   var availableWidth = desktopRect.width - (padding * 2);
   var availableHeight = desktopRect.height - (padding * 2);
@@ -524,17 +699,17 @@ function calculateGridPositions() {
   
   // Desktop: 3-column grid layout
   var colWidth = (availableWidth - (gap * 2)) / 3;
-  var squareHeight = colWidth * (2/3); // Top-left window height (2/3 of width)
+  var aboutWindowHeight = colWidth * 0.85; // About window height (slightly taller than original 2/3)
   var row1Height = 200; // Original height for other top windows
-  var linksWindowHeight = availableHeight - squareHeight - gap; // Links window starts below square
+  var linksWindowHeight = availableHeight - aboutWindowHeight - gap; // Links window starts below About window
   var holycWindowHeight = availableHeight - row1Height - gap; // HolyC interpreter starts below row1Height
   
   var positions = {
-    'grid-1-1': { // Column 1, Row 1 - Reduced height window
+    'grid-1-1': { // Column 1, Row 1 - About TempleOS window (increased height)
       left: padding,
       top: padding,
       width: colWidth,
-      height: squareHeight
+      height: aboutWindowHeight
     },
     'grid-2-1': { // Column 2, Row 1
       left: padding + colWidth + gap,
@@ -548,9 +723,9 @@ function calculateGridPositions() {
       width: colWidth,
       height: row1Height
     },
-    'grid-1-3': { // Column 1, Row 3 - Links window, fits below square
+    'grid-1-3': { // Column 1, Row 3 - Links window, fits below About window
       left: padding,
-      top: padding + squareHeight + gap,
+      top: padding + aboutWindowHeight + gap,
       width: colWidth,
       height: linksWindowHeight
     },
@@ -879,7 +1054,7 @@ var newWordBtn = document.getElementById('newWord');
 function fetchGodSays() {
   if(!godTextEl) return;
   
-  godTextEl.textContent = 'God says: Consulting oracle...';
+  godTextEl.textContent = 'god says: Consulting oracle...';
   if(newWordBtn) {
     newWordBtn.style.opacity = '0.5';
     newWordBtn.style.pointerEvents = 'none';
@@ -937,7 +1112,12 @@ function fetchGodSays() {
       .then(function(text) {
         var cleanText = text.trim();
         if(cleanText && cleanText.length > 0 && !cleanText.includes('Error') && !cleanText.includes('error')) {
-          godTextEl.textContent = 'God says: ' + cleanText;
+          // Truncate to random number of words between 8 and 16
+          var words = cleanText.split(/\s+/);
+          var numWords = Math.floor(Math.random() * (16 - 8 + 1)) + 8;
+          var truncatedWords = words.slice(0, numWords);
+          var truncatedText = truncatedWords.join(' ').toLowerCase();
+          godTextEl.textContent = 'god says: ' + truncatedText;
           if(newWordBtn) {
             newWordBtn.style.opacity = '1';
             newWordBtn.style.pointerEvents = 'auto';
@@ -969,7 +1149,12 @@ function fetchGodSays() {
       console.log('All API methods failed, using client-side fallback:', error);
       // Use client-side fallback
       var fallbackText = generateFallback();
-      godTextEl.textContent = 'God says: ' + fallbackText;
+      // Truncate to random number of words between 8 and 16
+      var words = fallbackText.split(/\s+/);
+      var numWords = Math.floor(Math.random() * (16 - 8 + 1)) + 8;
+      var truncatedWords = words.slice(0, numWords);
+      var truncatedText = truncatedWords.join(' ').toLowerCase();
+      godTextEl.textContent = 'god says: ' + truncatedText;
       if(newWordBtn) {
         newWordBtn.style.opacity = '1';
         newWordBtn.style.pointerEvents = 'auto';
@@ -1049,7 +1234,7 @@ if(sealImg){
       runButton.textContent = 'RUN (▶)';
       runButton.style.pointerEvents = 'auto';
     }
-  };
+};
 </script>
 </body>
 </html>
