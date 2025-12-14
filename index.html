@@ -886,13 +886,21 @@ function fetchGodSays() {
   }
   
   // Try direct API first, then CORS proxy as fallback
-  var apiUrl = 'https://godsays.xyz';
+  // Add cache-busting parameter to ensure fresh response each time
+  var timestamp = Date.now();
+  var random = Math.random().toString(36).substring(7);
+  var apiUrl = 'https://godsays.xyz?t=' + timestamp + '&r=' + random;
   var corsProxy = 'https://api.allorigins.win/raw?url=';
   
   function tryFetch(url, useProxy) {
     var fetchUrl = useProxy ? corsProxy + encodeURIComponent(url) : url;
     
-    return fetch(fetchUrl)
+    return fetch(fetchUrl, {
+      cache: 'no-cache',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
       .then(function(response) {
         if(!response.ok) throw new Error('Network response was not ok');
         return response.text();
