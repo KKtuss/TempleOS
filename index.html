@@ -885,21 +885,50 @@ function fetchGodSays() {
     newWordBtn.style.pointerEvents = 'none';
   }
   
-  // Try direct API first, then CORS proxy as fallback
-  // Add cache-busting parameter to ensure fresh response each time
+  // Try multiple methods: direct API, CORS proxies, then client-side fallback
   var timestamp = Date.now();
   var random = Math.random().toString(36).substring(7);
   var apiUrl = 'https://godsays.xyz?t=' + timestamp + '&r=' + random;
-  var corsProxy = 'https://api.allorigins.win/raw?url=';
   
-  function tryFetch(url, useProxy) {
-    var fetchUrl = useProxy ? corsProxy + encodeURIComponent(url) : url;
+  // Multiple CORS proxy options
+  var corsProxies = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+    'https://api.codetabs.com/v1/proxy?quest='
+  ];
+  
+  // Client-side fallback word list (sample from Terry's Happy.TXT)
+  var fallbackWords = [
+    'bringing', 'relief', 'computation', 'multiply', 'garlands', 'arrows', 'away', 'descend',
+    'savour', 'defective', 'extracted', 'dose', 'thrive', 'flash', 'towardliness', 'esteem',
+    'dissipation', 'sloth', 'special', 'case', 'ask', 'nicely', 'incredibly', 'galaxy',
+    'far', 'want', 'done', 'slumin', 'enquirer', 'really', 'baffling', 'furious',
+    'think', 'about', 'shot', 'first', 'downer', 'unsung', 'hero', 'super', 'computer',
+    'horrendous', 'who', 'say', 'give', 'up', 'cosmetics', 'miracle', 'stuff', 'holy',
+    'grail', 'back', 'trivial', 'obviously', 'failure', 'communicate', 'wrong', 'perfect',
+    'world', 'folks', 'Mission', 'Accomplished', 'kick', 'back', 'vice', 'liberal',
+    'gosh', 'suspense', 'holier', 'than', 'thou', 'frown', 'practice', 'China', 'tree',
+    'hugger', 'scum', 'snap', 'out', 'roll', 'joyful', 'money', 'what', 'you'
+  ];
+  
+  function generateFallback() {
+    // Generate 32 random words like the original
+    var words = [];
+    for(var i = 0; i < 32; i++) {
+      var randomIndex = Math.floor(Math.random() * fallbackWords.length);
+      words.push(fallbackWords[randomIndex]);
+    }
+    return words.join(' ');
+  }
+  
+  function tryFetch(url, proxyIndex) {
+    var useProxy = proxyIndex >= 0;
+    var fetchUrl = useProxy ? corsProxies[proxyIndex] + encodeURIComponent(url) : url;
     
     return fetch(fetchUrl, {
       cache: 'no-cache',
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
+      method: 'GET',
+      mode: 'cors'
     })
       .then(function(response) {
         if(!response.ok) throw new Error('Network response was not ok');
@@ -907,7 +936,7 @@ function fetchGodSays() {
       })
       .then(function(text) {
         var cleanText = text.trim();
-        if(cleanText && cleanText.length > 0) {
+        if(cleanText && cleanText.length > 0 && !cleanText.includes('Error') && !cleanText.includes('error')) {
           godTextEl.textContent = 'God says: ' + cleanText;
           if(newWordBtn) {
             newWordBtn.style.opacity = '1';
@@ -915,20 +944,32 @@ function fetchGodSays() {
           }
           return true;
         }
-        throw new Error('Empty response');
+        throw new Error('Empty or invalid response');
       });
   }
   
-  // Try direct fetch first
-  tryFetch(apiUrl, false)
+  // Try direct fetch first, then proxies sequentially
+  tryFetch(apiUrl, -1)
     .catch(function(error) {
-      console.log('Direct fetch failed, trying CORS proxy...', error);
-      // Fallback to CORS proxy
-      return tryFetch(apiUrl, true);
+      console.log('Direct fetch failed, trying CORS proxies...', error);
+      // Try first proxy
+      return tryFetch(apiUrl, 0);
     })
     .catch(function(error) {
-      console.error('Error fetching god says:', error);
-      godTextEl.textContent = 'God says: Oracle unavailable. The connection to the divine has been severed.';
+      console.log('Proxy 0 failed, trying proxy 1...', error);
+      // Try second proxy
+      return tryFetch(apiUrl, 1);
+    })
+    .catch(function(error) {
+      console.log('Proxy 1 failed, trying proxy 2...', error);
+      // Try third proxy
+      return tryFetch(apiUrl, 2);
+    })
+    .catch(function(error) {
+      console.log('All API methods failed, using client-side fallback:', error);
+      // Use client-side fallback
+      var fallbackText = generateFallback();
+      godTextEl.textContent = 'God says: ' + fallbackText;
       if(newWordBtn) {
         newWordBtn.style.opacity = '1';
         newWordBtn.style.pointerEvents = 'auto';
