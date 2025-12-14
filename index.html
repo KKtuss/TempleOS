@@ -33,6 +33,12 @@ html,body { height:100%; }
 body { margin:0; background:var(--bg); font-family: "TempleOS Font", "Courier New", Courier, monospace; color:var(--black); position:relative; overflow-x:hidden; }
 .topbar { display:flex; justify-content:space-between; align-items:center; padding:6px 4px 1px 4px; background:var(--bg); color:var(--white); border-bottom:2px solid var(--blue); font-size:13px; }
 .desktop { padding:4px; position:relative; min-height:calc(100vh - 40px); transition:filter 1s ease-out; background:var(--bg); }
+@media screen and (max-width: 768px) {
+  .desktop {
+    min-height: auto;
+    padding-bottom: 0;
+  }
+}
 .desktop.blurred { filter:blur(8px); }
 .desktop.blurred .window[data-initial-pos="grid-1-1"] { filter:blur(0); }
 .window { background:var(--panel); border:2px solid var(--blue); position:absolute; min-width:200px; min-height:150px; overflow:hidden; }
@@ -131,6 +137,8 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
 .icon.racing::before { content:""; position:absolute; left:2px; top:2px; width:28px; height:18px; border:3px solid var(--blue); border-left-color:transparent; border-right-color:transparent; }
 .icon.parallax::before { content:""; position:absolute; left:4px; top:2px; width:24px; height:20px; background:var(--pink); }
 .icon.space::before { content:""; position:absolute; left:4px; top:2px; width:26px; height:18px; background:var(--red); clip-path: polygon(0 0, 100% 0, 60% 50%, 100% 100%, 0 100%, 40% 50%); }
+.overlay-screen { position:fixed; inset:0; background:#808080; z-index:99999; display:block; }
+.overlay-screen.hidden { display:none; }
 .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
 .modal .dialog { width:360px; background:var(--panel); border:6px double var(--blue); }
 .dialog .title { text-align:center; padding:10px; color:var(--blue); border-bottom:2px solid var(--blue); font-weight:bold; }
@@ -181,8 +189,18 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
     width: calc(100% - 8px) !important;
     max-width: 100% !important;
     left: 4px !important;
-    margin-bottom: 8px;
+    margin-bottom: 2px !important;
     min-height: 200px;
+    top: auto !important;
+  }
+  .desktop .window[data-initial-pos="grid-1-1"] {
+    height: 650px !important;
+    min-height: 650px !important;
+  }
+  .desktop .window[data-initial-pos="grid-1-3"],
+  .desktop .window[data-initial-pos="grid-2-1"],
+  .desktop .window[data-initial-pos="grid-3-1"] {
+    margin-top: 10px !important;
   }
   .titlebar {
     font-size: 12px;
@@ -200,12 +218,22 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
   .content {
     padding: 8px;
     font-size: 13px;
-    max-height: 60vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: auto;
+  }
+  .window[data-initial-pos="grid-1-1"] .content {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   .resize-handle {
     display: none;
+  }
+  .window[data-initial-pos="grid-2-3-span2"] {
+    display: none !important;
   }
   .dir-item {
     flex-direction: column;
@@ -241,6 +269,14 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
   .modal {
     padding: 10px;
   }
+  .modal[style*="display: none"],
+  .modal.hidden {
+    display: none !important;
+  }
+  .modal[style*="display: none"] .dialog,
+  .modal.hidden .dialog {
+    display: none !important;
+  }
   .modal-content {
     max-width: 95vw;
     max-height: 90vh;
@@ -252,6 +288,47 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
   .seal img {
     max-width: 100%;
     height: auto;
+  }
+  .gameBlock {
+    white-space: normal;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .gameBlock > div {
+    flex: 0 0 auto;
+    min-width: 80px;
+    max-width: 120px;
+  }
+  .gameBlock img {
+    width: 100%;
+    height: auto;
+    max-width: 100px;
+  }
+  .gameBlock p {
+    font-size: 10px;
+    word-break: break-word;
+  }
+  .content p[style*="color: #a800a8"] {
+    margin-left: 0 !important;
+    text-align: center;
+    margin-top: 10px !important;
+    margin-bottom: 8px !important;
+  }
+  .content div[style*="display:flex"] {
+    flex-direction: column !important;
+  }
+  .content div[style*="width:200px"] {
+    width: 100% !important;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+  .content div[style*="width:200px"] img {
+    width: 100% !important;
+    height: auto !important;
+    margin-left: 0 !important;
   }
 }
 
@@ -276,6 +353,7 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
 </style>
 </head>
 <body>
+<div class="overlay-screen hidden" id="overlayScreen"></div>
 <div class="topbar">
   <div id="topbarInfo">LOAD Mon 12/04 21:19:40 FPS:63<span class="terminal-cursor"></span></div>
   <div id="contractAddress" style="user-select:text; cursor:pointer;" title="Click to copy">0x0000000000000000000000000000000000000000</div>
@@ -298,6 +376,67 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
       <div>
         <p style="margin:0 0 10px 0;">Despite the OS not being finished nor fully functional, it contains a full compiler, custom kernel, unique graphics engine, and dozens of Davis's own tools and experiments.</p>
         <p style="margin:0;">This token is a small tribute to his legacy : a nod to creativity without rules.</p>
+    </div>
+  </div>
+  </div>
+  <div class="window" data-initial-pos="grid-1-3">
+    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
+    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
+    <div class="titlebar"><span>LINKS — <span class="tight">templeos.io/tc-links</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
+    <div class="content">
+      <div style="display:flex; flex-direction:column; gap:16px; height:100%;">
+        <div>
+          <div style="font-weight:bold; color:var(--blue); margin-bottom:6px;">TOKEN LINKS:</div>
+          <div class="dir-list" style="max-height:140px;">
+            <div class="dir-item">
+              <a href="https://pump.fun" target="_blank">Pump.fun</a>
+              <div class="url-scroll">
+                <span class="url-text">https://pump.fun</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://x.com" target="_blank">X Account</a>
+              <div class="url-scroll">
+                <span class="url-text">https://x.com</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://x.com/i/communities" target="_blank">X Community</a>
+              <div class="url-scroll">
+                <span class="url-text">https://x.com/i/communities</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:bold; color:var(--blue); margin-bottom:6px;">TEMPLEOS LINKS:</div>
+          <div class="dir-list" style="max-height:140px;">
+            <div class="dir-item">
+              <a href="https://templeos.org" target="_blank">TempleOS / Final Terry Version</a>
+              <div class="url-scroll">
+                <span class="url-text">https://templeos.org</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://www.reddit.com/r/TempleOS_Official" target="_blank">r/TempleOS_Official</a>
+              <div class="url-scroll">
+                <span class="url-text">https://www.reddit.com/r/TempleOS_Official</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://en.wikipedia.org/wiki/TempleOS" target="_blank">TempleOS (Wikipedia)</a>
+              <div class="url-scroll">
+                <span class="url-text">https://en.wikipedia.org/wiki/TempleOS</span>
+              </div>
+            </div>
+            <div class="dir-item">
+              <a href="https://zealos.com" target="_blank">ZealOS (modern fork)</a>
+              <div class="url-scroll">
+                <span class="url-text">https://zealos.com</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -455,67 +594,6 @@ input[type="text"], input[type="email"] { width:100%; padding:6px; border:2px so
       </div>
     </div>
   </div>
-  <div class="window" data-initial-pos="grid-1-3">
-    <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
-    <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
-    <div class="titlebar"><span>LINKS — <span class="tight">templeos.io/tc-links</span> —</span><div class="right"><span class="close-btn">[X]</span></div></div>
-    <div class="content">
-      <div style="display:flex; flex-direction:column; gap:16px; height:100%;">
-        <div>
-          <div style="font-weight:bold; color:var(--blue); margin-bottom:6px;">TOKEN LINKS:</div>
-          <div class="dir-list" style="max-height:140px;">
-            <div class="dir-item">
-              <a href="https://pump.fun" target="_blank">Pump.fun</a>
-              <div class="url-scroll">
-                <span class="url-text">https://pump.fun</span>
-              </div>
-            </div>
-            <div class="dir-item">
-              <a href="https://x.com" target="_blank">X Account</a>
-              <div class="url-scroll">
-                <span class="url-text">https://x.com</span>
-              </div>
-            </div>
-            <div class="dir-item">
-              <a href="https://x.com/i/communities" target="_blank">X Community</a>
-              <div class="url-scroll">
-                <span class="url-text">https://x.com/i/communities</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div style="font-weight:bold; color:var(--blue); margin-bottom:6px;">TEMPLEOS LINKS:</div>
-          <div class="dir-list" style="max-height:140px;">
-            <div class="dir-item">
-              <a href="https://templeos.org" target="_blank">TempleOS / Final Terry Version</a>
-              <div class="url-scroll">
-                <span class="url-text">https://templeos.org</span>
-              </div>
-            </div>
-            <div class="dir-item">
-              <a href="https://www.reddit.com/r/TempleOS_Official" target="_blank">r/TempleOS_Official</a>
-              <div class="url-scroll">
-                <span class="url-text">https://www.reddit.com/r/TempleOS_Official</span>
-              </div>
-            </div>
-            <div class="dir-item">
-              <a href="https://en.wikipedia.org/wiki/TempleOS" target="_blank">TempleOS (Wikipedia)</a>
-              <div class="url-scroll">
-                <span class="url-text">https://en.wikipedia.org/wiki/TempleOS</span>
-              </div>
-            </div>
-            <div class="dir-item">
-              <a href="https://zealos.com" target="_blank">ZealOS (modern fork)</a>
-              <div class="url-scroll">
-                <span class="url-text">https://zealos.com</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
   <div class="window" data-initial-pos="grid-2-3-span2">
     <div class="resize-handle n"></div><div class="resize-handle s"></div><div class="resize-handle e"></div><div class="resize-handle w"></div>
     <div class="resize-handle ne"></div><div class="resize-handle nw"></div><div class="resize-handle se"></div><div class="resize-handle sw"></div>
@@ -579,6 +657,7 @@ function bringToFront(window) {
 function initWindow(window) {
   var titlebar = window.querySelector('.titlebar');
   var closeBtn = window.querySelector('.close-btn');
+  var isMobile = window.innerWidth <= 768;
   
   // Make window focusable
   window.addEventListener('mousedown', function(e) {
@@ -595,54 +674,49 @@ function initWindow(window) {
     });
   }
   
-  // Drag functionality (mouse)
-  titlebar.addEventListener('mousedown', function(e) {
-    if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
-    bringToFront(window);
-    dragState.active = true;
-    dragState.window = window;
-    var rect = window.getBoundingClientRect();
-    dragState.offsetX = e.clientX - rect.left;
-    dragState.offsetY = e.clientY - rect.top;
-    window.classList.add('dragging');
-    window.setAttribute('data-moved', 'true'); // Mark as moved so resize doesn't reset it
-    e.preventDefault();
-  });
-  
-  // Drag functionality (touch)
-  titlebar.addEventListener('touchstart', function(e) {
-    if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
-    var touch = e.touches[0];
-    bringToFront(window);
-    dragState.active = true;
-    dragState.window = window;
-    var rect = window.getBoundingClientRect();
-    dragState.offsetX = touch.clientX - rect.left;
-    dragState.offsetY = touch.clientY - rect.top;
-    window.classList.add('dragging');
-    window.setAttribute('data-moved', 'true');
-    e.preventDefault();
-  });
-  
-  // Resize handles
-  window.querySelectorAll('.resize-handle').forEach(function(handle) {
-    handle.addEventListener('mousedown', function(e) {
+  // Only enable dragging/resizing on desktop
+  if(!isMobile) {
+    // Drag functionality (mouse)
+    titlebar.addEventListener('mousedown', function(e) {
+      if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
       bringToFront(window);
-      resizeState.active = true;
-      resizeState.window = window;
-      resizeState.handle = handle.className.split(' ')[1];
+      dragState.active = true;
+      dragState.window = window;
       var rect = window.getBoundingClientRect();
-      resizeState.startX = e.clientX;
-      resizeState.startY = e.clientY;
-      resizeState.startWidth = rect.width;
-      resizeState.startHeight = rect.height;
-      resizeState.startLeft = rect.left;
-      resizeState.startTop = rect.top;
+      dragState.offsetX = e.clientX - rect.left;
+      dragState.offsetY = e.clientY - rect.top;
+      window.classList.add('dragging');
       window.setAttribute('data-moved', 'true'); // Mark as moved so resize doesn't reset it
       e.preventDefault();
-      e.stopPropagation();
     });
-  });
+    
+    // Resize handles
+    window.querySelectorAll('.resize-handle').forEach(function(handle) {
+      handle.addEventListener('mousedown', function(e) {
+        bringToFront(window);
+        resizeState.active = true;
+        resizeState.window = window;
+        resizeState.handle = handle.className.split(' ')[1];
+        var rect = window.getBoundingClientRect();
+        resizeState.startX = e.clientX;
+        resizeState.startY = e.clientY;
+        resizeState.startWidth = rect.width;
+        resizeState.startHeight = rect.height;
+        resizeState.startLeft = rect.left;
+        resizeState.startTop = rect.top;
+        window.setAttribute('data-moved', 'true'); // Mark as moved so resize doesn't reset it
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+  } else {
+    // On mobile: disable dragging by preventing default on titlebar
+    titlebar.addEventListener('touchstart', function(e) {
+      if(e.target.classList.contains('close-btn') || e.target.classList.contains('button')) return;
+      e.preventDefault(); // Prevent dragging on mobile
+    });
+    titlebar.style.cursor = 'default'; // Remove move cursor on mobile
+  }
 }
 
 // Calculate initial grid-based positions
@@ -660,41 +734,57 @@ function calculateGridPositions() {
   if(isMobile) {
     // Mobile: Stack windows vertically, full width
     var windowWidth = availableWidth;
-    var windowHeight = Math.min(300, availableHeight / 5);
+    var baseWindowHeight = Math.min(300, availableHeight / 5);
+    var mobileGap = 2; // Very small gap for mobile
     var currentTop = padding;
     
-    return {
+    // About TempleOS - taller, enough to show all text
+    var aboutHeight = Math.min(650, availableHeight / 1.6);
+    var positions = {
       'grid-1-1': {
         left: padding,
         top: currentTop,
         width: windowWidth,
-        height: windowHeight
-      },
-      'grid-2-1': {
-        left: padding,
-        top: currentTop += windowHeight + gap,
-        width: windowWidth,
-        height: windowHeight
-      },
-      'grid-3-1': {
-        left: padding,
-        top: currentTop += windowHeight + gap,
-        width: windowWidth,
-        height: windowHeight
-      },
-      'grid-1-3': {
-        left: padding,
-        top: currentTop += windowHeight + gap,
-        width: windowWidth,
-        height: windowHeight
-      },
-      'grid-2-3-span2': {
-        left: padding,
-        top: currentTop += windowHeight + gap,
-        width: windowWidth,
-        height: Math.max(windowHeight, availableHeight - currentTop - padding)
+        height: aboutHeight
       }
     };
+    // Add more space after About window
+    currentTop += aboutHeight + (mobileGap * 6);
+    
+    positions['grid-1-3'] = {
+      left: padding,
+      top: currentTop,
+      width: windowWidth,
+      height: baseWindowHeight
+    };
+    currentTop += baseWindowHeight + mobileGap;
+    
+    // God Word - shorter
+    var godWordHeight = Math.min(150, availableHeight / 8);
+    positions['grid-2-1'] = {
+      left: padding,
+      top: currentTop,
+      width: windowWidth,
+      height: godWordHeight
+    };
+    currentTop += godWordHeight + mobileGap;
+    
+    positions['grid-3-1'] = {
+      left: padding,
+      top: currentTop,
+      width: windowWidth,
+      height: windowHeight
+    };
+    currentTop += windowHeight + mobileGap;
+    
+    positions['grid-2-3-span2'] = {
+      left: padding,
+      top: currentTop,
+      width: windowWidth,
+      height: Math.max(windowHeight, availableHeight - currentTop - padding)
+    };
+    
+    return positions;
   }
   
   // Desktop: 3-column grid layout
@@ -743,14 +833,51 @@ function calculateGridPositions() {
 // Initialize all windows with grid positions
 function initializeWindowPositions() {
   var positions = calculateGridPositions();
+  var isMobile = window.innerWidth <= 768;
   document.querySelectorAll('.window').forEach(function(window) {
     var posKey = window.getAttribute('data-initial-pos');
     if(posKey && positions[posKey]) {
       var pos = positions[posKey];
-      window.style.left = pos.left + 'px';
-      window.style.top = pos.top + 'px';
-      window.style.width = pos.width + 'px';
-      window.style.height = pos.height + 'px';
+      if(isMobile) {
+        // On mobile, use CSS stacking - don't set absolute positions
+        window.style.position = 'relative';
+        window.style.left = 'auto';
+        window.style.top = 'auto';
+        window.style.width = 'calc(100% - 8px)';
+        // Set height - use CSS height for About window, calculated for others
+        if(posKey === 'grid-1-1') {
+          window.style.setProperty('height', '650px', 'important');
+          window.style.setProperty('min-height', '650px', 'important');
+        } else {
+          window.style.height = pos.height + 'px';
+        }
+        // Add margin-top for spacing (except first window)
+        if(posKey !== 'grid-1-1') {
+          // Calculate margin-top based on previous window's position
+          var prevPos = null;
+          if(posKey === 'grid-1-3') {
+            prevPos = positions['grid-1-1'];
+          } else if(posKey === 'grid-2-1') {
+            prevPos = positions['grid-1-3'];
+          } else if(posKey === 'grid-3-1') {
+            prevPos = positions['grid-2-1'];
+          }
+          if(prevPos) {
+            // Margin is the difference in top positions minus previous window height
+            var marginTop = pos.top - (prevPos.top + prevPos.height);
+            // Use setProperty with important to override CSS !important
+            window.style.setProperty('margin-top', Math.max(0, marginTop) + 'px', 'important');
+          }
+        } else {
+          window.style.setProperty('margin-top', '0', 'important');
+        }
+      } else {
+        // Desktop: use absolute positioning
+        window.style.left = pos.left + 'px';
+        window.style.top = pos.top + 'px';
+        window.style.width = pos.width + 'px';
+        window.style.height = pos.height + 'px';
+      }
     }
     initWindow(window);
     bringToFront(window);
@@ -990,6 +1117,7 @@ if(closeModalBtn) {
     
     // Hide modal immediately
     modal.style.display = 'none';
+    modal.classList.add('hidden');
     console.log('Modal hidden immediately');
     
     // Then remove blur smoothly from desktop (transition will happen after modal is gone)
